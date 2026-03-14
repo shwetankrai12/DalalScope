@@ -1,7 +1,6 @@
 """OHLCV data fetcher using yfinance."""
 
 import pandas as pd
-import yfinance as yf
 from datetime import datetime, date
 from typing import Optional
 
@@ -30,6 +29,9 @@ def fetch_ohlcv(
     """
     if mode not in ["latest", "history"]:
         raise ValueError(f"Invalid mode '{mode}'. Must be 'latest' or 'history'.")
+    
+    # Import yfinance locally to prevent blocking app startup time
+    import yfinance as yf
     
     try:
         # Download data using yfinance
