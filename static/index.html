@@ -37,7 +37,7 @@
                     <label for="query" class="stitch-label">Ticker or Company Name</label>
                     <div class="input-with-icon">
                         <span class="search-icon">🔍</span>
-                        <input type="text" id="query" name="query" class="stitch-input" placeholder="e.g. TCS or RELIANCE" autocomplete="off" required>
+                        <input type="text" id="query" name="query" class="stitch-input" placeholder="Enter ticker or company name e.g. TCS, RELIANCE" autocomplete="off" autofocus required>
                     </div>
                     <div id="resolved-helper" class="helper-text stitch-hidden"></div>
                 </div>
@@ -72,10 +72,10 @@
 
         <div id="toast-container" class="toast-container"></div>
 
-        <!-- Main Content (Hidden until fetched) -->
-        <div id="dashboard-content" class="dashboard-content stitch-hidden">
+        <!-- Main Content -->
+        <div id="dashboard-content" class="dashboard-content">
             <!-- Summary Cards Row -->
-            <div class="summary-cards-row">
+            <div id="summary-cards" class="summary-cards-row stitch-hidden">
                 <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 1;">
                     <div class="card-bar"></div>
                     <div class="card-title">OPEN</div>
@@ -100,7 +100,7 @@
             </div>
 
             <!-- Chart Container -->
-            <div class="stitch-card chart-section fade-in-stagger" style="--stagger-idx: 5;">
+            <div class="stitch-card chart-section fade-in-stagger stitch-hidden" style="--stagger-idx: 5;">
                 <div class="chart-header">
                     <h3>Price History</h3>
                 </div>
@@ -116,7 +116,7 @@
                     <span id="table-ticker-badge" class="table-badge"></span>
                 </div>
                 
-                <div id="empty-state" class="stitch-empty-state stitch-hidden">
+                <div id="empty-state" class="stitch-empty-state">
                     <div class="empty-icon">📊</div>
                     <p>No data yet — search for a ticker above</p>
                 </div>
@@ -130,7 +130,7 @@
                     <div class="skeleton-row"></div>
                 </div>
 
-                <div class="stitch-table-wrapper" id="table-wrapper">
+                <div class="stitch-table-wrapper stitch-hidden" id="table-wrapper">
                     <table class="stitch-table" id="data-table">
                         <thead>
                             <tr>

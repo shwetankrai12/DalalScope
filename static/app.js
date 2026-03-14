@@ -81,9 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Pre-fetch TCS.NS on load
-    queryInput.value = 'TCS.NS';
-    fetchData('TCS.NS', 'latest');
+    queryInput.focus();
 });
 
 // --- Top Bar & Status ---
@@ -144,7 +142,7 @@ async function fetchData(rawInput, mode, start='', end='') {
 
     btn.textContent = 'FETCHING...';
     btn.disabled = true;
-    content.classList.remove('stitch-hidden'); // Show content area to reveal skeleton
+    document.getElementById('summary-cards').classList.remove('stitch-hidden');
     tableWrapper.classList.add('stitch-hidden');
     emptyState.classList.add('stitch-hidden');
     skeleton.classList.remove('stitch-hidden');
@@ -259,7 +257,9 @@ async function fetchData(rawInput, mode, start='', end='') {
     } catch(err) {
         if(err.message !== 'Dates required') showToast(err.message, 'error');
         if(currentData.length === 0) {
-            content.classList.add('stitch-hidden');
+            document.getElementById('summary-cards').classList.add('stitch-hidden');
+            document.querySelector('.chart-section').classList.add('stitch-hidden');
+            emptyState.classList.remove('stitch-hidden');
         }
     } finally {
         skeleton.classList.add('stitch-hidden');
