@@ -1,0 +1,14 @@
+# Output CSV files
+*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code settings
+.vscode/
+
+# Environment
+.env
+venv/
