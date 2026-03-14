@@ -20,6 +20,11 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/api/stock/latest")
 async def get_latest(ticker: str):
     """Fetches the latest trading day OHLCV."""
