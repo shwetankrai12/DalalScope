@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSE Market Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-terminal">
+    <!-- Top Bar -->
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <span class="logo-icon">◈</span>
+            <span class="app-name">NSE MARKET TERMINAL</span>
+            <div id="market-status" class="status-badge">
+                <span class="status-dot"></span>
+                <span class="status-text">CHECKING...</span>
+            </div>
+        </div>
+        <div class="top-bar-right">
+            <span id="clock" class="clock-text font-mono">IST --:--:-- --</span>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- Search Panel -->
+        <section class="stitch-card search-panel">
+            <form id="search-form" class="stitch-form">
+                <div class="input-container flex-grow">
+                    <label for="query" class="stitch-label">Ticker or Company Name</label>
+                    <div class="input-with-icon">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="query" name="query" class="stitch-input" placeholder="e.g. TCS or RELIANCE" autocomplete="off" required>
+                    </div>
+                    <div id="resolved-helper" class="helper-text stitch-hidden"></div>
+                </div>
+
+                <div class="input-container mode-container">
+                    <label class="stitch-label">Mode</label>
+                    <div class="stitch-toggle-group">
+                        <input type="radio" id="mode-latest" name="mode" value="latest" checked>
+                        <label for="mode-latest" class="toggle-btn">LATEST</label>
+                        
+                        <input type="radio" id="mode-history" name="mode" value="history">
+                        <label for="mode-history" class="toggle-btn">HISTORY</label>
+                    </div>
+                </div>
+
+                <div id="date-pickers" class="date-pickers stitch-hidden">
+                    <div class="input-container">
+                        <label for="start-date" class="stitch-label">From</label>
+                        <input type="date" id="start-date" name="start" class="stitch-date-picker">
+                    </div>
+                    <div class="input-container">
+                        <label for="end-date" class="stitch-label">To</label>
+                        <input type="date" id="end-date" name="end" class="stitch-date-picker">
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" id="btn-fetch" class="stitch-btn primary-btn">FETCH DATA ▶</button>
+                </div>
+            </form>
+        </section>
+
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- Main Content (Hidden until fetched) -->
+        <div id="dashboard-content" class="dashboard-content stitch-hidden">
+            <!-- Summary Cards Row -->
+            <div class="summary-cards-row">
+                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 1;">
+                    <div class="card-bar"></div>
+                    <div class="card-title">OPEN</div>
+                    <div class="card-value font-mono" id="val-open">--</div>
+                </div>
+                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 2;">
+                    <div class="card-bar" id="close-bar"></div>
+                    <div class="card-title">CLOSE</div>
+                    <div class="card-value font-mono" id="val-close">--</div>
+                    <div id="val-change" class="change-badge">--</div>
+                </div>
+                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 3;">
+                    <div class="card-bar"></div>
+                    <div class="card-title">RANGE</div>
+                    <div class="card-value font-mono" id="val-range">--</div>
+                </div>
+                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 4;">
+                    <div class="card-bar"></div>
+                    <div class="card-title">VOLUME</div>
+                    <div class="card-value font-mono" id="val-volume">--</div>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="stitch-card chart-section fade-in-stagger" style="--stagger-idx: 5;">
+                <div class="chart-header">
+                    <h3>Price History</h3>
+                </div>
+                <div class="chart-wrapper" style="position: relative; height: 350px; width: 100%;">
+                    <canvas id="price-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Data Table Section -->
+            <div class="stitch-card table-section fade-in-stagger" style="--stagger-idx: 6;">
+                <div class="table-header-context" style="justify-content: space-between; align-items: center;">
+                    <button type="button" id="btn-export" class="stitch-btn ghost-btn" disabled style="height: 32px; padding: 0 16px; font-size: 0.75rem;">↓ EXPORT CSV</button>
+                    <span id="table-ticker-badge" class="table-badge"></span>
+                </div>
+                
+                <div id="empty-state" class="stitch-empty-state stitch-hidden">
+                    <div class="empty-icon">📊</div>
+                    <p>No data yet — search for a ticker above</p>
+                </div>
+
+                <!-- Skeleton Loader -->
+                <div id="skeleton-loader" class="skeleton-container stitch-hidden">
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                </div>
+
+                <div class="stitch-table-wrapper" id="table-wrapper">
+                    <table class="stitch-table" id="data-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="date">DATE <span class="sort-icon"></span></th>
+                                <th data-sort="open">OPEN <span class="sort-icon"></span></th>
+                                <th data-sort="high">HIGH <span class="sort-icon"></span></th>
+                                <th data-sort="low">LOW <span class="sort-icon"></span></th>
+                                <th data-sort="close" class="highlight-th">CLOSE <span class="sort-icon"></span></th>
+                                <th data-sort="volume">VOLUME <span class="sort-icon"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                    <span id="last-updated" class="last-updated stitch-text-muted"></span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
