@@ -44,6 +44,23 @@ body.theme-terminal {
     background-image: radial-gradient(var(--border) 1px, transparent 1px);
     background-size: 20px 20px;
     min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+body.theme-light {
+  --bg:          #f4f7fb;
+  --surface:     #ffffff;
+  --surface2:    #eaf0f6;
+  --border:      #d1dce5;
+  --border-glow: #b0c4de;
+  --accent:      #009c73;
+  --accent2:     #0284c7;
+  --accent-dim:  rgba(0, 156, 115, 0.15);
+  --text:        #1e293b;
+  --text-muted:  #64748b;
+  --text-faint:  #94a3b8;
+  --red:         #e11d48;
+  --yellow:      #d97706;
 }
 
 /* Typography Helpers */
@@ -623,6 +640,133 @@ body.theme-terminal {
     }
 }
 
+/* ── News & Sentiment Section ─────────────────────────── */
+#news-section {
+  display: none;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%; max-width: 900px;
+  padding-bottom: 4rem;
+}
+#news-section.visible { display: flex; }
+
+/* Signal banner */
+.signal-banner {
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  border: 1px solid var(--border);
+}
+.signal-banner.BULLISH { background: rgba(0,200,150,0.07); border-color: var(--accent); }
+.signal-banner.BEARISH { background: rgba(244,63,94,0.07); border-color: var(--red); }
+.signal-banner.NEUTRAL { background: rgba(91,122,160,0.07); border-color: var(--border); }
+
+.signal-label {
+  font-family: var(--mono); font-size: 1.4rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.signal-label.BULLISH { color: var(--accent); }
+.signal-label.BEARISH { color: var(--red); }
+.signal-label.NEUTRAL { color: var(--text-muted); }
+
+.signal-arrow { font-size: 1.6rem; }
+
+.signal-meta {
+  font-family: var(--mono); font-size: .75rem;
+  color: var(--text-muted); line-height: 1.6;
+}
+
+/* Sentiment meter bar */
+.sentiment-meter {
+  width: 100%; background: var(--border);
+  border-radius: 4px; height: 6px; overflow: hidden;
+}
+.sentiment-fill {
+  height: 100%; border-radius: 4px;
+  transition: width .6s ease;
+}
+.sentiment-fill.BULLISH { background: var(--accent); }
+.sentiment-fill.BEARISH { background: var(--red); }
+.sentiment-fill.NEUTRAL { background: var(--text-muted); }
+
+/* Breakdown cards */
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+}
+.breakdown-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: .875rem 1rem;
+  text-align: center;
+}
+.breakdown-card.bullish { border-color: rgba(0,200,150,0.3); }
+.breakdown-card.bearish { border-color: rgba(244,63,94,0.3); }
+.breakdown-card.neutral { border-color: rgba(91,122,160,0.3); }
+.breakdown-number {
+  font-family: var(--mono); font-size: 1.75rem; font-weight: 700;
+}
+.breakdown-card.bullish .breakdown-number { color: var(--accent); }
+.breakdown-card.bearish .breakdown-number { color: var(--red); }
+.breakdown-card.neutral .breakdown-number { color: var(--text-muted); }
+.breakdown-tag {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .1em; color: var(--text-faint);
+  text-transform: uppercase; margin-top: 2px;
+}
+
+/* Headline cards */
+.news-list { display: flex; flex-direction: column; gap: .5rem; }
+.news-section-title {
+  font-family: var(--mono); font-size: .7rem;
+  letter-spacing: .12em; color: var(--text-faint);
+  text-transform: uppercase; margin-bottom: .25rem;
+}
+.headline-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: .875rem 1rem;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  text-decoration: none; transition: border-color .18s;
+  cursor: pointer;
+}
+.headline-card:hover { border-color: var(--accent2); }
+.headline-card.BULLISH:hover { border-color: var(--accent); }
+.headline-card.BEARISH:hover { border-color: var(--red); }
+
+.headline-left { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.headline-title {
+  font-family: var(--sans); font-size: .9rem;
+  color: var(--text); line-height: 1.45;
+}
+.headline-meta {
+  font-family: var(--mono); font-size: .68rem;
+  color: var(--text-muted); display: flex; gap: 10px;
+}
+.headline-right { flex-shrink: 0; }
+.sentiment-pill {
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .08em; padding: 3px 8px;
+  border-radius: 4px; font-weight: 700;
+}
+.sentiment-pill.BULLISH { background: rgba(0,200,150,0.12); color: var(--accent); }
+.sentiment-pill.BEARISH { background: rgba(244,63,94,0.12); color: var(--red); }
+.sentiment-pill.NEUTRAL { background: rgba(91,122,160,0.12); color: var(--text-muted); }
+
+/* News loading skeleton */
+.news-skeleton {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: .875rem 1rem; height: 64px;
+  position: relative; overflow: hidden;
+}
+.news-skeleton::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
 .search-form {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -726,6 +870,9 @@ body.theme-terminal {
 </div>
         </div>
         <div class="top-bar-right">
+            <button id="theme-toggle" style="padding: 4px 8px; font-size: 1.2rem; cursor: pointer; border: none; background: transparent; color: var(--text); margin-right: 12px;" title="Toggle Theme">
+                <span id="theme-icon">🔆</span>
+            </button>
             <div class="stat-card" style="text-align: right;">
   <div class="stat-label">Live IST</div>
   <div class="stat-value mono" id="ist-clock" style="font-size: 1rem; margin-top: -2px;">--:--:--</div>
@@ -861,11 +1008,81 @@ body.theme-terminal {
             </div>
         </div>
     </main>
+    
+    <!-- ── News + Sentiment Section ─────────────────────── -->
+    <section id="news-section">
+
+      <!-- Signal banner -->
+      <div class="signal-banner NEUTRAL" id="signal-banner">
+        <div>
+          <div class="signal-label NEUTRAL" id="signal-label">
+            <span class="signal-arrow" id="signal-arrow">→</span>
+            <span id="signal-text">NEUTRAL</span>
+          </div>
+          <div class="signal-meta" id="signal-meta">Analysing headlines…</div>
+        </div>
+        <div style="min-width:180px;">
+          <div style="font-family:var(--mono);font-size:.68rem;color:var(--text-faint);margin-bottom:6px;letter-spacing:.08em;">BULLISH SENTIMENT</div>
+          <div class="sentiment-meter">
+            <div class="sentiment-fill NEUTRAL" id="sentiment-fill" style="width:50%"></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted);margin-top:4px;" id="sentiment-pct">50%</div>
+        </div>
+      </div>
+
+      <!-- Breakdown grid -->
+      <div class="breakdown-grid">
+        <div class="breakdown-card bullish">
+          <div class="breakdown-number" id="bd-bullish">0</div>
+          <div class="breakdown-tag">↑ Bullish</div>
+        </div>
+        <div class="breakdown-card bearish">
+          <div class="breakdown-number" id="bd-bearish">0</div>
+          <div class="breakdown-tag">↓ Bearish</div>
+        </div>
+        <div class="breakdown-card neutral">
+          <div class="breakdown-number" id="bd-neutral">0</div>
+          <div class="breakdown-tag">→ Neutral</div>
+        </div>
+      </div>
+
+      <!-- Headlines list -->
+      <div class="news-list">
+        <div class="news-section-title">Latest Headlines</div>
+        <div id="headlines-container">
+          <!-- Skeleton loaders shown while fetching -->
+          <div class="news-skeleton"></div>
+          <div class="news-skeleton"></div>
+          <div class="news-skeleton"></div>
+        </div>
+      </div>
+
+    </section>
 
     <script>\nlet currentSort = { col: 'date', asc: false };
 let currentData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Theme Toggle Logic
+    const themeBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('theme-light');
+        if (themeIcon) themeIcon.textContent = '🌙';
+    }
+
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            const body = document.body;
+            body.classList.toggle('theme-light');
+            const isLight = body.classList.contains('theme-light');
+            themeIcon.textContent = isLight ? '🌙' : '🔆';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        });
+    }
+
     // Top Bar Logic
     
     
@@ -922,13 +1139,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if(!rawInput) return;
 
+        // Kick off the API fetch immediately
+        const fetchPromise = fetchData(rawInput, mode, start, end);
+
+        // Run the vanish animation concurrently
         await vanishAndSubmit(queryInput, document.getElementById('particle-canvas'), () => {
             queryInput.value = '';
             showPlaceholder();
             checkInputLengthForButton();
         });
 
-        await fetchData(rawInput, mode, start, end);
+        await fetchPromise;
     });
 
 
@@ -972,6 +1193,7 @@ async function fetchData(rawInput, mode, start='', end='') {
     tableWrapper.classList.add('stitch-hidden');
     emptyState.classList.add('stitch-hidden');
     skeleton.classList.remove('stitch-hidden');
+    hideNewsSection();
     
     // reset summaries
     document.getElementById('val-open').textContent = '--';
@@ -1086,6 +1308,7 @@ async function fetchData(rawInput, mode, start='', end='') {
             document.getElementById('summary-cards').classList.add('stitch-hidden');
             document.querySelector('.chart-section').classList.add('stitch-hidden');
             emptyState.classList.remove('stitch-hidden');
+            hideNewsSection();
         }
     } finally {
         skeleton.classList.add('stitch-hidden');
@@ -1160,50 +1383,32 @@ function renderTable(dataArray) {
     });
 }
 
-function drawChart(dataArray, ticker) {
-    const ctx = document.getElementById('price-chart').getContext('2d');
-    const isHistory = dataArray.length > 1;
+function drawChart(ticker, history) {
+    if (!history.dates || history.dates.length === 0) return;
     
-    // Show chart container only if history
-    const chartSection = document.querySelector('.chart-section');
-    if (!isHistory) {
-        chartSection.classList.add('stitch-hidden');
-        return;
-    } else {
-        chartSection.classList.remove('stitch-hidden');
-    }
-
-    // Prepare data
-    const labels = dataArray.map(d => fmtDate(d.Date));
-    const dataPoints = dataArray.map(d => d.Close);
+    const ctx = chartCanvas.getContext('2d');
+    if (chartInstance) chartInstance.destroy();
     
-    // Determine overall trend color
-    const firstClose = dataArray[0].Close;
-    const lastClose = dataArray[dataArray.length - 1].Close;
-    const isPositive = lastClose >= firstClose;
+    const dates = history.dates.map(d => new Date(d));
+    const closes = history.closes;
+    const isUp = closes[closes.length - 1] >= closes[0];
+    const color = isUp ? '#00e676' : '#ff3d00';
+    const fill = isUp ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 61, 0, 0.1)';
     
-    const lineColor = isPositive ? '#00c896' : '#f43f5e';
-    const bgColor = isPositive ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 59, 92, 0.1)';
-
-    if (priceChart) {
-        priceChart.destroy();
-    }
-
-    priceChart = new Chart(ctx, {
+    chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: dates,
             datasets: [{
-                label: `${ticker} Close Price`,
-                data: dataPoints,
-                borderColor: lineColor,
-                backgroundColor: bgColor,
+                label: ticker,
+                data: closes,
+                borderColor: color,
+                backgroundColor: fill,
                 borderWidth: 2,
-                pointRadius: 0, // hide points unless hovered
-                pointHoverRadius: 6,
-                pointHoverBackgroundColor: '#0ea5e9',
+                pointRadius: 0,
+                pointHoverRadius: 4,
                 fill: true,
-                tension: 0.1 // sharp jagged lines for terminal feel
+                tension: 0.1
             }]
         },
         options: {
@@ -1214,25 +1419,29 @@ function drawChart(dataArray, ticker) {
                 tooltip: {
                     mode: 'index',
                     intersect: false,
-                    backgroundColor: 'rgba(15, 22, 35, 0.9)',
-                    titleColor: '#8899AA',
-                    bodyColor: '#E8EDF5',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#888',
+                    bodyColor: '#fff',
+                    borderColor: '#333',
                     borderWidth: 1,
-                    titleFont: { family: "'JetBrains Mono', monospace" },
-                    bodyFont: { family: "'JetBrains Mono', monospace", size: 14 }
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.parsed.y.toFixed(2);
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
-                    grid: { display: false, drawBorder: false },
-                    ticks: { color: '#8899AA', font: { family: "'JetBrains Mono', monospace", size: 10 }, maxTicksLimit: 8 }
+                    type: 'time',
+                    time: { tooltipFormat: 'dd MMM yyyy' },
+                    grid: { color: '#222', drawBorder: false },
+                    ticks: { color: '#666', maxRotation: 0 }
                 },
                 y: {
-                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-                    ticks: { 
-                        color: '#8899AA', 
-                        font: { family: "'JetBrains Mono', monospace", size: 11 },
+                    grid: { color: '#222', drawBorder: false },
+                    ticks: {
+                        color: '#666',
                         callback: function(value) { return '₹' + value; }
                     }
                 }
@@ -1240,6 +1449,9 @@ function drawChart(dataArray, ticker) {
             interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
     });
+
+    // Wire: Call News fetcher alongside drawChart
+    fetchNews(ticker);
 }
 
 // Formatters
@@ -1253,119 +1465,28 @@ const fmtVolume = (num) => {
     if (num == null) return '--';
     if (num >= 10000000) return (num / 10000000).toFixed(2) + 'Cr';
     if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return Number(num).toString();
+    if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+    return num.toString();
+};
+const fmtMarketCap = (num) => {
+    if (num == null) return '--';
+    if (num >= 10000000000000) return '₹' + (num / 10000000000000).toFixed(2) + 'T';
+    if (num >= 1000000000) return '₹' + (num / 1000000000).toFixed(2) + 'B';
+    if (num >= 1000000) return '₹' + (num / 1000000).toFixed(2) + 'M';
+    return '₹' + num.toString();
 };
 
-function animateValue(obj, end, isCurrency=false, duration=600) {
-    if(!end || isNaN(end)) {
-        obj.textContent = '--';
-        return;
-    }
-    let startTimestamp = null;
-    let startVal = parseFloat(obj.textContent.replace(/[^0-9.-]+/g,""));
-    if(isNaN(startVal)) startVal = end * 0.9; // Arbitrary start if none
-
-    const step = (timestamp) => {
-        if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        
-        // easeOutQuart
-        const ease = 1 - Math.pow(1 - progress, 4);
-        const current = startVal + (end - startVal) * ease;
-        
-        obj.textContent = isCurrency ? fmtCurrency(current) : current.toFixed(2);
-        
-        if (progress < 1) {
-            window.requestAnimationFrame(step);
-        } else {
-            obj.textContent = isCurrency ? fmtCurrency(end) : end;
-        }
-    };
-    window.requestAnimationFrame(step);
-}
-
-// --- Toasts & Exports ---
-
-function showToast(msg, type='error') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `stitch-toast toast-${type}`;
-    toast.textContent = msg;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('toast-exit');
-        toast.addEventListener('animationend', () => toast.remove());
-    }, 4000);
-}
-
-function downloadCSV(dataArray, ticker) {
-    if(!dataArray || dataArray.length === 0) return;
-    
-    const headers = ["Date", "Open", "High", "Low", "Close", "Volume"];
-    let csvContent = headers.join(",") + "\n";
-    
-    dataArray.forEach(row => {
-        const line = [row.Date, row.Open, row.High, row.Low, row.Close, row.Volume].join(",");
-        csvContent += line + "\n";
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = `${ticker}_history.csv`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// --- Market Status Badge & IST Clock ---
-function newUpdateMarketStatus() {
-  const now = new Date();
-  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-
-  const hh  = String(ist.getHours()).padStart(2, '0');
-  const mm  = String(ist.getMinutes()).padStart(2, '0');
-  const ss  = String(ist.getSeconds()).padStart(2, '0');
-  const clockEl = document.getElementById('ist-clock');
-  if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
-
-  const h   = ist.getHours();
-  const m   = ist.getMinutes();
-  const day = ist.getDay();
-
-  const isWeekday = day >= 1 && day <= 5;
-  const afterOpen = (h > 9)  || (h === 9  && m >= 15);
-  const beforeClose = !((h > 15) || (h === 15 && m >= 30));
-  const isOpen = isWeekday && afterOpen && beforeClose;
-
-  const badge = document.getElementById('market-badge');
-  const label = document.getElementById('market-label');
-  if (badge && label) {
-    badge.className = 'market-badge' + (isOpen ? '' : ' closed');
-    label.textContent = isOpen ? 'MARKET OPEN' : 'MARKET CLOSED';
-  }
-}
-
-newUpdateMarketStatus();
-setInterval(newUpdateMarketStatus, 1000);
-
-// --- Rotating Placeholder ---
+// -- Placeholder Engine --
 const PLACEHOLDERS = [
-  'Search RELIANCE, TCS, INFY…',
-  'Try "Tata Consultancy Services"',
-  'Enter NSE ticker: HDFCBANK',
+  'Search "Reliance" or RELIANCE.NS',
+  'Search "TCS" or TCS.NS',
+  'Search "HDFC Bank" or HDFCBANK.NS',
   'Search "Infosys" or INFY.NS',
   'Try WIPRO, BAJFINANCE, ITC…',
   'Enter company name or symbol',
 ];
 
 let phIndex = 0;
-const searchInput = document.getElementById('query');
 const phEl = document.getElementById('rotating-placeholder');
 if(phEl) phEl.textContent = PLACEHOLDERS[0];
 
@@ -1384,7 +1505,7 @@ setInterval(cyclePlaceholder, 3200);
 
 function checkInputLengthForButton() {
    const btn = document.getElementById('search-btn');
-   if(searchInput && searchInput.value.trim().length > 0) {
+   if(queryInput && queryInput.value.trim().length > 0) {
       if(btn) btn.disabled = false;
    } else {
       if(btn) btn.disabled = true;
@@ -1392,9 +1513,9 @@ function checkInputLengthForButton() {
 }
 checkInputLengthForButton();
 
-searchInput.addEventListener('input', () => {
+queryInput.addEventListener('input', () => {
   if(phEl) {
-    phEl.style.display = searchInput.value ? 'none' : '';
+    phEl.style.display = queryInput.value ? 'none' : '';
     checkInputLengthForButton();
   }
 });
@@ -1440,6 +1561,13 @@ async function vanishAndSubmit(inputEl, canvasEl, onComplete) {
   let alive = [...particles];
 
   await new Promise(resolve => {
+    if (alive.length === 0) {
+      canvasEl.style.opacity = '0';
+      inputEl.style.color = '';
+      inputEl.disabled = false;
+      resolve();
+      return;
+    }
     (function frame() {
       requestAnimationFrame(() => {
         ctx.clearRect(pos - 10, 0, canvasEl.width, canvasEl.height);
@@ -1473,6 +1601,117 @@ async function vanishAndSubmit(inputEl, canvasEl, onComplete) {
 
   onComplete();
 }
-\n</script>
+
+/* ── News + Sentiment ──────────────────────────────────── */
+
+async function fetchNews(ticker) {
+  const section = document.getElementById('news-section');
+  const container = document.getElementById('headlines-container');
+
+  if (!section) return;
+
+  // Show section with skeleton loaders
+  section.classList.add('visible');
+  container.innerHTML = `
+    <div class="news-skeleton"></div>
+    <div class="news-skeleton"></div>
+    <div class="news-skeleton"></div>
+  `;
+
+  try {
+    const res = await fetch(`/api/stock/news?ticker=${encodeURIComponent(ticker)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderNews(data);
+  } catch (err) {
+    container.innerHTML = `
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--red);padding:.75rem;">
+        Could not load news. Please try again.
+      </div>`;
+  }
+}
+
+function renderNews(data) {
+  const signal   = data.signal;   // "BULLISH" | "BEARISH" | "NEUTRAL"
+  const pct      = data.bullish_pct;
+  const count    = data.headline_count;
+  const bd       = data.breakdown;
+
+  // Signal banner
+  const banner = document.getElementById('signal-banner');
+  const label  = document.getElementById('signal-label');
+  const arrow  = document.getElementById('signal-arrow');
+  const text   = document.getElementById('signal-text');
+  const meta   = document.getElementById('signal-meta');
+  const fill   = document.getElementById('sentiment-fill');
+  const pctEl  = document.getElementById('sentiment-pct');
+
+  banner.className = `signal-banner ${signal}`;
+  label.className  = `signal-label ${signal}`;
+  fill.className   = `sentiment-fill ${signal}`;
+  arrow.textContent = signal === 'BULLISH' ? '▲' : signal === 'BEARISH' ? '▼' : '→';
+  text.textContent  = signal;
+  meta.textContent  = `Based on ${count} headline${count !== 1 ? 's' : ''} · Google News · NSE`;
+  fill.style.width  = pct + '%';
+  pctEl.textContent = pct + '%';
+
+  // Breakdown
+  document.getElementById('bd-bullish').textContent = bd.bullish;
+  document.getElementById('bd-bearish').textContent = bd.bearish;
+  document.getElementById('bd-neutral').textContent = bd.neutral;
+
+  // Headlines
+  const container = document.getElementById('headlines-container');
+  if (!data.headlines || data.headlines.length === 0) {
+    container.innerHTML = `
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--text-muted);padding:.75rem;">
+        No headlines found for this ticker.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = data.headlines.map(h => {
+    const time = formatNewsTime(h.published);
+    return `
+      <a class="headline-card ${h.sentiment}"
+         href="${escHtml(h.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="headline-left">
+          <div class="headline-title">${escHtml(h.title)}</div>
+          <div class="headline-meta">
+            <span>${escHtml(h.source)}</span>
+            <span>${time}</span>
+          </div>
+        </div>
+        <div class="headline-right">
+          <span class="sentiment-pill ${h.sentiment}">${h.sentiment}</span>
+        </div>
+      </a>`;
+  }).join('');
+}
+
+function formatNewsTime(pubDateStr) {
+  if (!pubDateStr) return '';
+  try {
+    const d    = new Date(pubDateStr);
+    const now  = new Date();
+    const diff = Math.floor((now - d) / 60000); // minutes
+    if (diff < 60)  return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+  } catch { return ''; }
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function hideNewsSection() {
+  const section = document.getElementById('news-section');
+  if(section) section.classList.remove('visible');
+}
+
+</script>
 </body>
 </html>

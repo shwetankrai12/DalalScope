@@ -6,7 +6,7 @@ from typing import Optional
 import json
 
 from resolver import resolve_ticker
-from fetcher import fetch_ohlcv
+from fetcher import fetch_ohlcv, fetch_news
 
 app = FastAPI(title="NSE Market Dashboard API")
 
@@ -88,6 +88,22 @@ async def resolve_company(company: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/stock/news")
+async def get_stock_news(ticker: str):
+    """
+    Returns news headlines + sentiment signal for a given NSE ticker.
+    Source: Google News RSS (free, no API key required).
+    """
+    if not ticker:
+        raise HTTPException(status_code=400, detail="ticker parameter is required")
+    
+    data = fetch_news(ticker)
+    
+    if "error" in data and not data["headlines"]:
+        raise HTTPException(status_code=503, detail=f"News fetch failed: {data['error']}")
+    
+    return data
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
