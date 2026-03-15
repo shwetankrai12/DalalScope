@@ -5,13 +5,714 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NSE Market Dashboard</title>
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <style>\n:root {
+  --bg:          #060a10;
+  --surface:     #0d1520;
+  --surface2:    #111c2d;
+  --border:      #1a2d47;
+  --border-glow: #1e4080;
+  --accent:      #00c896;
+  --accent2:     #0ea5e9;
+  --accent-dim:  rgba(0,200,150,0.18);
+  --text:        #e2eaf4;
+  --text-muted:  #5b7aa0;
+  --text-faint:  #2a3f5a;
+  --red:         #f43f5e;
+  --yellow:      #fbbf24;
+  --mono:        'JetBrains Mono', monospace;
+  --sans:        'Space Grotesk', sans-serif;
+}
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.theme-terminal {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 20px 20px;
+    min-height: 100vh;
+}
+
+/* Typography Helpers */
+.font-mono {
+    font-family: var(--mono);
+}
+.stitch-text-muted {
+    color: var(--text-weak);
+}
+.stitch-hidden {
+    display: none !important;
+}
+
+/* Layout */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Top Bar */
+.top-bar {
+    width: 100%;
+    background-color: #05080c;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--sans);
+}
+
+.top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo-icon {
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+.app-name {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+}
+
+/* Market Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    font-weight: 700;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-weak);
+}
+
+.status-badge.open {
+    border-color: rgba(0, 255, 136, 0.3);
+}
+
+.status-badge.open .status-dot {
+    background-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+}
+
+.status-badge.closed {
+    opacity: 0.7;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+}
+
+.clock-text {
+    color: var(--accent);
+    font-size: 0.875rem;
+}
+
+/* Cards */
+.stitch-card {
+    background-color: var(--surface);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    transition: box-shadow 0.3s ease;
+}
+
+/* Form Controls */
+.stitch-form-old {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flex-grow { flex: 1; min-width: 250px; }
+
+.stitch-label {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-weak);
+    font-weight: 700;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    font-size: 1rem;
+    color: var(--text-weak);
+}
+
+.stitch-input, .stitch-date-picker {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px 10px 36px;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    outline: none;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.stitch-date-picker {
+    padding-left: 12px;
+}
+
+.stitch-input:focus, .stitch-date-picker:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+}
+
+.helper-text {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-family: var(--mono);
+    margin-top: 4px;
+}
+
+/* Toggle Group */
+.stitch-toggle-group {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    height: 40px;
+}
+
+.stitch-toggle-group input[type="radio"] {
+    display: none;
+}
+
+.toggle-btn {
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-weak);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stitch-toggle-group input[type="radio"]:checked + .toggle-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+/* Date Pickers Transition */
+.date-pickers {
+    display: flex;
+    gap: 20px;
+    transition: opacity 0.3s, transform 0.3s;
+    transform-origin: left;
+}
+
+.date-pickers.stitch-hidden {
+    opacity: 0;
+    transform: scaleX(0.9);
+    pointer-events: none;
+    position: absolute; /* Remove from flow when hidden */
+    visibility: hidden;
+}
+
+/* Buttons */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.stitch-btn {
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0 24px;
+    height: 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.primary-btn {
+    background-color: var(--accent);
+    color: #000;
+}
+
+.primary-btn:hover {
+    background-color: #33DDFF;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.ghost-btn {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.ghost-btn:hover:not(:disabled) {
+    border-color: var(--text-weak);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.ghost-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Toasts */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1000;
+}
+
+.stitch-toast {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid;
+    padding: 16px 20px;
+    border-radius: 4px;
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    color: var(--text);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    animation: toast-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    min-width: 300px;
+}
+
+@keyframes toast-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-exit {
+    animation: toast-slide-out 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes toast-slide-out {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+.toast-error { border-left-color: var(--red); }
+.toast-success { border-left-color: var(--accent); }
+.toast-warning { border-left-color: var(--yellow); }
+
+/* Main Content Animations */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fade-in-stagger {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.4s ease forwards;
+    animation-delay: calc(var(--stagger-idx) * 80ms);
+}
+
+@keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Summary Cards */
+.summary-cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.summary-card {
+    position: relative;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.card-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--border);
+}
+
+.card-bar.positive { background-color: var(--accent); }
+.card-bar.negative { background-color: var(--red); }
+
+.card-title {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--text-weak);
+    font-weight: 700;
+}
+
+.card-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Change Badge */
+.change-badge {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: var(--mono);
+}
+
+.badge-pos {
+    background-color: rgba(0, 255, 136, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.badge-neg {
+    background-color: rgba(255, 59, 92, 0.1);
+    color: var(--red);
+    border: 1px solid rgba(255, 59, 92, 0.3);
+}
+
+/* Data Table Section */
+.table-section {
+    padding: 0;
+}
+
+.table-header-context {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.table-badge {
+    background-color: rgba(0, 212, 255, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.stitch-empty-state {
+    padding: 80px 24px;
+    text-align: center;
+    color: var(--text-weak);
+    font-family: var(--sans);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.stitch-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.stitch-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.875rem;
+    text-align: right;
+}
+
+.stitch-table th, .stitch-table td {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.stitch-table th {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-weak);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.stitch-table th:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+    color: var(--text);
+}
+
+.sort-icon {
+    display: inline-block;
+    width: 12px;
+    text-align: center;
+    opacity: 0.5;
+}
+
+.stitch-table tr {
+    transition: all 0.2s;
+    position: relative;
+    animation: fadeInRow 0.3s ease forwards;
+    opacity: 0;
+}
+
+/* Alternating rows */
+.stitch-table tbody tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.015);
+}
+
+.stitch-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.stitch-table td:first-child, .stitch-table th:first-child {
+    text-align: left;
+}
+
+/* Close col */
+.highlight-th {
+    color: var(--text) !important;
+}
+
+.highlight-td {
+    color: var(--text);
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Row Indicators */
+.row-indicator {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.row-indicator.pos { background-color: var(--accent); box-shadow: 0 0 4px var(--accent); }
+.row-indicator.neg { background-color: var(--red); box-shadow: 0 0 4px var(--red); }
+
+.table-footer {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    font-family: var(--sans);
+}
+
+/* Skeleton Loading */
+.skeleton-container {
+    padding: 0;
+}
+
+.skeleton-row {
+    height: 45px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, 
+        rgba(255,255,255,0) 0%, 
+        rgba(255,255,255,0.02) 50%, 
+        rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@keyframes fadeInRow {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .summary-cards-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container { padding: 16px; }
+    .top-bar { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .top-bar-right { display: none; }
+    .summary-cards-row { grid-template-columns: 1fr; }
+    .stitch-form-old { flex-direction: column; align-items: stretch; }
+    .action-buttons { width: 100%; flex-direction: column; }
+    .stitch-btn { width: 100%; }
+    .date-pickers { flex-direction: column; }
+    
+    .date-pickers.stitch-hidden {
+        position: relative; /* Maintain flow for vertical collapse */
+        display: none !important;
+    }
+}
+
+.search-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: border-color .25s, box-shadow .25s;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+.search-form:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim), 0 0 30px rgba(0,200,150,0.08);
+}
+.search-form input:disabled {
+  opacity: 0.5;
+}
+
+#search-btn {
+  background: var(--accent);
+  color: var(--bg);
+  fill: var(--bg);
+}
+#search-btn svg {
+  stroke: var(--bg);
+}
+#search-btn:disabled {
+  background: var(--border);
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--text-muted);
+}
+#search-btn:disabled svg {
+  stroke: var(--text-muted);
+}
+#search-btn:not(:disabled):hover {
+  background: #00e5ac;
+  transform: scale(1.05);
+}
+
+@keyframes ph-in  {
+  from { opacity: 0; transform: translateY(calc(-50% + 6px)); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+@keyframes ph-out {
+  from { opacity: 1; transform: translateY(-50%); }
+  to   { opacity: 0; transform: translateY(calc(-50% - 6px)); }
+}
+.ph-enter { animation: ph-in  .28s ease forwards; }
+.ph-exit  { animation: ph-out .28s ease forwards; }
+
+.market-badge {
+  font-family: var(--mono); font-size: .7rem; letter-spacing: .06em;
+  padding: 4px 10px; border-radius: 4px;
+  background: rgba(0,200,150,0.10);
+  border: 1px solid var(--accent); color: var(--accent);
+  display: flex; align-items: center; gap: 6px;
+}
+.market-badge.closed {
+  background: rgba(244,63,94,0.10);
+  border-color: var(--red); color: var(--red);
+}
+.badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+.stat-label {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+}
+\n</style>
 </head>
 <body class="theme-terminal">
     <!-- Top Bar -->
@@ -19,26 +720,33 @@
         <div class="top-bar-left">
             <span class="logo-icon">◈</span>
             <span class="app-name">NSE MARKET TERMINAL</span>
-            <div id="market-status" class="status-badge">
-                <span class="status-dot"></span>
-                <span class="status-text">CHECKING...</span>
-            </div>
+            <div id="market-badge" class="market-badge">
+    <span class="badge-dot"></span>
+    <span id="market-label">CHECKING…</span>
+</div>
         </div>
         <div class="top-bar-right">
-            <span id="clock" class="clock-text font-mono">IST --:--:-- --</span>
+            <div class="stat-card" style="text-align: right;">
+  <div class="stat-label">Live IST</div>
+  <div class="stat-value mono" id="ist-clock" style="font-size: 1rem; margin-top: -2px;">--:--:--</div>
+</div>
         </div>
     </header>
 
     <main class="dashboard-container">
         <!-- Search Panel -->
         <section class="stitch-card search-panel">
-            <form id="search-form" class="stitch-form">
-                <div class="input-container flex-grow">
-                    <label for="query" class="stitch-label">Ticker or Company Name</label>
-                    <div class="input-with-icon">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="query" name="query" class="stitch-input" placeholder="Enter ticker or company name e.g. TCS, RELIANCE" autocomplete="off" autofocus required>
-                    </div>
+            <form id="search-form" class="search-form">
+                <div class="input-container flex-grow" style="position:relative;">
+    <label for="query" class="stitch-label">Ticker or Company Name</label>
+    <div class="input-with-icon" style="position:relative;">
+        <span class="search-icon">🔍</span>
+        <canvas id="particle-canvas" style="position: absolute; left: 0; top: 0; pointer-events: none; z-index: 5; transform: scale(0.5); transform-origin: top left; filter: invert(1); opacity: 0; transition: opacity .1s;"></canvas>
+        <input type="text" id="query" name="query" class="stitch-input" autocomplete="off" autofocus required style="position: relative; z-index: 2; background: transparent;">
+        <span id="rotating-placeholder" style="position: absolute; left: 36px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.875rem; color: var(--text-muted); pointer-events: none; z-index: 3; white-space: nowrap; overflow: hidden; max-width: calc(100% - 40px); text-overflow: ellipsis; transition: opacity .28s ease, transform .28s ease;"></span>
+    </div>
+    <div id="resolved-helper" class="helper-text stitch-hidden"></div>
+</div>
                     <div id="resolved-helper" class="helper-text stitch-hidden"></div>
                 </div>
 
@@ -65,7 +773,7 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button type="submit" id="btn-fetch" class="stitch-btn primary-btn">FETCH DATA ▶</button>
+                    <button type="submit" id="search-btn" class="stitch-btn">FETCH DATA <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-left: 4px;"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 </div>
             </form>
         </section>
@@ -154,6 +862,617 @@
         </div>
     </main>
 
-    <script src="app.js"></script>
+    <script>\nlet currentSort = { col: 'date', asc: false };
+let currentData = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Top Bar Logic
+    
+    
+    
+
+    // DOM Elements
+    const form = document.getElementById('search-form');
+    const queryInput = document.getElementById('query');
+    const modeRadios = document.querySelectorAll('input[name="mode"]');
+    const datePickers = document.getElementById('date-pickers');
+    const startInput = document.getElementById('start-date');
+    const endInput = document.getElementById('end-date');
+    const btnExport = document.getElementById('btn-export');
+    const btnFetch = document.getElementById('search-btn');
+    const resolvedHelper = document.getElementById('resolved-helper');
+    
+    // Sort State
+    // (moved to global scope)
+    // Initialize Default Dates (last 30 days)
+    const today = new Date();
+    const lastMonth = new Date(today);
+    lastMonth.setDate(lastMonth.getDate() - 30);
+    endInput.value = today.toISOString().split('T')[0];
+    startInput.value = lastMonth.toISOString().split('T')[0];
+
+    // Input uppercase
+    queryInput.addEventListener('input', (e) => {
+        const start = e.target.selectionStart;
+        const end = e.target.selectionEnd;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(start, end);
+        resolvedHelper.classList.add('stitch-hidden'); // hide resolution helper on typing
+    });
+
+    // Toggle mode
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'history') {
+                datePickers.classList.remove('stitch-hidden');
+            } else {
+                datePickers.classList.add('stitch-hidden');
+            }
+        });
+    });
+
+    
+    // Handle Form Submit
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const rawInput = queryInput.value.trim();
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const start = startInput.value;
+        const end = endInput.value;
+
+        if(!rawInput) return;
+
+        await vanishAndSubmit(queryInput, document.getElementById('particle-canvas'), () => {
+            queryInput.value = '';
+            showPlaceholder();
+            checkInputLengthForButton();
+        });
+
+        await fetchData(rawInput, mode, start, end);
+    });
+
+
+    // Handle Export
+    btnExport.addEventListener('click', () => {
+        if (!currentData.length) return;
+        const ticker = document.getElementById('table-ticker-badge').textContent.replace(/[\[\]\s]/g, '');
+        downloadCSV(currentData, ticker);
+    });
+
+    // Handle Table Sorting
+    document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.getAttribute('data-sort');
+            if(currentSort.col === col) {
+                currentSort.asc = !currentSort.asc; // toggle
+            } else {
+                currentSort.col = col;
+                currentSort.asc = (col !== 'date'); // Default false for date, true for numbers
+            }
+            renderTable(currentData);
+        });
+    });
+
+    queryInput.focus();
+});
+
+// --- API & State Management ---
+
+async function fetchData(rawInput, mode, start='', end='') {
+    const btn = document.getElementById('search-btn');
+    const content = document.getElementById('dashboard-content');
+    const tableWrapper = document.getElementById('table-wrapper');
+    const emptyState = document.getElementById('empty-state');
+    const skeleton = document.getElementById('skeleton-loader');
+    const resolvedHelper = document.getElementById('resolved-helper');
+
+    btn.innerHTML = 'FETCHING...';
+    btn.disabled = true;
+    document.getElementById('summary-cards').classList.remove('stitch-hidden');
+    tableWrapper.classList.add('stitch-hidden');
+    emptyState.classList.add('stitch-hidden');
+    skeleton.classList.remove('stitch-hidden');
+    
+    // reset summaries
+    document.getElementById('val-open').textContent = '--';
+    document.getElementById('val-close').textContent = '--';
+    document.getElementById('val-range').textContent = '--';
+    document.getElementById('val-volume').textContent = '--';
+    document.getElementById('val-change').textContent = '--';
+    document.getElementById('val-change').className = 'change-badge stitch-hidden';
+    document.getElementById('close-bar').className = 'card-bar';
+
+    try {
+        let ticker = rawInput.toUpperCase();
+        let companyName = null;
+
+        // Auto append .NS
+        if (!ticker.endsWith('.NS') && !ticker.includes(' ')) {
+            ticker += '.NS';
+            document.getElementById('query').value = ticker;
+        }
+
+        // Resolve if it looks like a company name
+        if (ticker.includes(' ')) {
+            const resolveURL = `/api/stock/resolve?company=${encodeURIComponent(rawInput)}`;
+            const resolveRes = await fetch(resolveURL);
+            const resolveJson = await resolveRes.json();
+            
+            if(!resolveRes.ok) throw new Error(resolveJson.detail || resolveJson.error || 'Failed to resolve company.');
+            
+            ticker = resolveJson.ticker;
+            companyName = resolveJson.company;
+            document.getElementById('query').value = ticker;
+            
+            resolvedHelper.textContent = `Resolved: ${companyName}`;
+            resolvedHelper.classList.remove('stitch-hidden');
+        }
+
+        let isHistory = (mode === 'history');
+        let dataArray = [];
+
+        if (!isHistory) {
+            const res = await fetch(`/api/stock/latest?ticker=${encodeURIComponent(ticker)}`);
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.detail || json.error || 'Failed to fetch latest data.');
+            dataArray = [{...json, Date: json.date, Open: json.open, High: json.high, Low: json.low, Close: json.close, Volume: json.volume}];
+        } else {
+            if(!start || !end) {
+                showToast('Start and End dates are required for history.', 'warning');
+                throw new Error('Dates required');
+            }
+            const res = await fetch(`/api/stock/history?ticker=${encodeURIComponent(ticker)}&start=${start}&end=${end}`);
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.detail || json.error || 'Failed Historical fetch.');
+            if(json.length === 0) throw new Error('No Data Found');
+            dataArray = json; // yfinance chronological
+        }
+
+        currentData = dataArray;
+        document.getElementById('table-ticker-badge').textContent = `[ ${ticker} ]`;
+        
+        // Populate Summary
+        const latest = dataArray[dataArray.length - 1]; // last item is most recent conceptually
+        animateValue(document.getElementById('val-open'), latest.Open, true);
+        animateValue(document.getElementById('val-close'), latest.Close, true);
+        
+        document.getElementById('val-range').textContent = `${latest.Low.toFixed(2)} — ${latest.High.toFixed(2)}`;
+        document.getElementById('val-volume').textContent = fmtVolume(latest.Volume);
+
+        const change = latest.Close - latest.Open;
+        const pctChange = (change / latest.Open) * 100;
+        const changeBadge = document.getElementById('val-change');
+        const closeBar = document.getElementById('close-bar');
+        
+        if (change > 0) {
+            changeBadge.innerHTML = `▲ +${pctChange.toFixed(2)}%`;
+            changeBadge.className = 'change-badge badge-pos';
+            closeBar.className = 'card-bar positive';
+        } else if (change < 0) {
+            changeBadge.innerHTML = `▼ ${pctChange.toFixed(2)}%`;
+            changeBadge.className = 'change-badge badge-neg';
+            closeBar.className = 'card-bar negative';
+        } else {
+            changeBadge.innerHTML = `0.00%`;
+            changeBadge.className = 'change-badge';
+            closeBar.className = 'card-bar';
+        }
+
+        // Render Table or empty state
+        if (isHistory && dataArray.length > 0) {
+            document.getElementById('btn-export').disabled = false;
+            currentSort = { col: 'date', asc: false }; // Reset sort
+            renderTable(dataArray);
+            tableWrapper.classList.remove('stitch-hidden');
+        } else if (isHistory) {
+            emptyState.classList.remove('stitch-hidden');
+            document.getElementById('btn-export').disabled = true;
+        } else {
+            // Latest mode, hide table
+            document.getElementById('btn-export').disabled = true;
+        }
+        
+        // Draw Chart
+        drawChart(dataArray, ticker);
+
+        const now = new Date();
+        document.getElementById('last-updated').textContent = `Local time: ${now.toLocaleTimeString('en-US')}`;
+        
+        if(!isHistory || dataArray.length > 0) showToast('Data fetched successfully', 'success');
+
+    } catch(err) {
+        if(err.message !== 'Dates required') showToast(err.message, 'error');
+        if(currentData.length === 0) {
+            document.getElementById('summary-cards').classList.add('stitch-hidden');
+            document.querySelector('.chart-section').classList.add('stitch-hidden');
+            emptyState.classList.remove('stitch-hidden');
+        }
+    } finally {
+        skeleton.classList.add('stitch-hidden');
+        
+        skeleton.classList.add('stitch-hidden');
+        btn.innerHTML = 'FETCH DATA <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-left: 4px;"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        btn.disabled = false;
+
+        
+        // Re-trigger stagger animation
+        const staggers = document.querySelectorAll('.fade-in-stagger');
+        staggers.forEach(el => {
+            el.style.animation = 'none';
+            el.offsetHeight; // trigger reflow
+            el.style.animation = null;
+        });
+    }
+}
+
+
+// --- UI Renderers & Animation ---
+
+let priceChart = null;
+
+function renderTable(dataArray) {
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
+    
+    // Update sort icons
+    document.querySelectorAll('th[data-sort] .sort-icon').forEach(icon => icon.textContent = '');
+    const th = document.querySelector(`th[data-sort="${currentSort.col}"]`);
+    if(th) {
+        th.querySelector('.sort-icon').textContent = currentSort.asc ? '↑' : '↓';
+    }
+
+    // Sort data copy
+    let sorted = [...dataArray].sort((a, b) => {
+        let valA, valB;
+        if(currentSort.col === 'date') {
+            valA = new Date(a.Date).getTime();
+            valB = new Date(b.Date).getTime();
+        } else {
+            const keyMap = { 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume' };
+            valA = a[keyMap[currentSort.col]];
+            valB = b[keyMap[currentSort.col]];
+        }
+        
+        if (valA < valB) return currentSort.asc ? -1 : 1;
+        if (valA > valB) return currentSort.asc ? 1 : -1;
+        return 0;
+    });
+
+    sorted.forEach((row, i) => {
+        const change = row.Close - row.Open;
+        const trend = change >= 0 ? 'pos' : 'neg';
+        
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = `${i * 30}ms`; // staggered row fade in
+        
+        tr.innerHTML = `
+            <td>
+                <span class="row-indicator ${trend}"></span>
+                ${fmtDate(row.Date)}
+            </td>
+            <td>${fmtCurrency(row.Open)}</td>
+            <td>${fmtCurrency(row.High)}</td>
+            <td>${fmtCurrency(row.Low)}</td>
+            <td class="highlight-td">${fmtCurrency(row.Close)}</td>
+            <td>${fmtVolume(row.Volume)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function drawChart(dataArray, ticker) {
+    const ctx = document.getElementById('price-chart').getContext('2d');
+    const isHistory = dataArray.length > 1;
+    
+    // Show chart container only if history
+    const chartSection = document.querySelector('.chart-section');
+    if (!isHistory) {
+        chartSection.classList.add('stitch-hidden');
+        return;
+    } else {
+        chartSection.classList.remove('stitch-hidden');
+    }
+
+    // Prepare data
+    const labels = dataArray.map(d => fmtDate(d.Date));
+    const dataPoints = dataArray.map(d => d.Close);
+    
+    // Determine overall trend color
+    const firstClose = dataArray[0].Close;
+    const lastClose = dataArray[dataArray.length - 1].Close;
+    const isPositive = lastClose >= firstClose;
+    
+    const lineColor = isPositive ? '#00c896' : '#f43f5e';
+    const bgColor = isPositive ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 59, 92, 0.1)';
+
+    if (priceChart) {
+        priceChart.destroy();
+    }
+
+    priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `${ticker} Close Price`,
+                data: dataPoints,
+                borderColor: lineColor,
+                backgroundColor: bgColor,
+                borderWidth: 2,
+                pointRadius: 0, // hide points unless hovered
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: '#0ea5e9',
+                fill: true,
+                tension: 0.1 // sharp jagged lines for terminal feel
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(15, 22, 35, 0.9)',
+                    titleColor: '#8899AA',
+                    bodyColor: '#E8EDF5',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    titleFont: { family: "'JetBrains Mono', monospace" },
+                    bodyFont: { family: "'JetBrains Mono', monospace", size: 14 }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { color: '#8899AA', font: { family: "'JetBrains Mono', monospace", size: 10 }, maxTicksLimit: 8 }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                    ticks: { 
+                        color: '#8899AA', 
+                        font: { family: "'JetBrains Mono', monospace", size: 11 },
+                        callback: function(value) { return '₹' + value; }
+                    }
+                }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+    });
+}
+
+// Formatters
+const fmtCurrency = (val) => val != null ? `₹${Number(val).toFixed(2)}` : '--';
+const fmtDate = (dateStr) => {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, ' ');
+};
+const fmtVolume = (num) => {
+    if (num == null) return '--';
+    if (num >= 10000000) return (num / 10000000).toFixed(2) + 'Cr';
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return Number(num).toString();
+};
+
+function animateValue(obj, end, isCurrency=false, duration=600) {
+    if(!end || isNaN(end)) {
+        obj.textContent = '--';
+        return;
+    }
+    let startTimestamp = null;
+    let startVal = parseFloat(obj.textContent.replace(/[^0-9.-]+/g,""));
+    if(isNaN(startVal)) startVal = end * 0.9; // Arbitrary start if none
+
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        // easeOutQuart
+        const ease = 1 - Math.pow(1 - progress, 4);
+        const current = startVal + (end - startVal) * ease;
+        
+        obj.textContent = isCurrency ? fmtCurrency(current) : current.toFixed(2);
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.textContent = isCurrency ? fmtCurrency(end) : end;
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
+// --- Toasts & Exports ---
+
+function showToast(msg, type='error') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `stitch-toast toast-${type}`;
+    toast.textContent = msg;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('toast-exit');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, 4000);
+}
+
+function downloadCSV(dataArray, ticker) {
+    if(!dataArray || dataArray.length === 0) return;
+    
+    const headers = ["Date", "Open", "High", "Low", "Close", "Volume"];
+    let csvContent = headers.join(",") + "\n";
+    
+    dataArray.forEach(row => {
+        const line = [row.Date, row.Open, row.High, row.Low, row.Close, row.Volume].join(",");
+        csvContent += line + "\n";
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `${ticker}_history.csv`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// --- Market Status Badge & IST Clock ---
+function newUpdateMarketStatus() {
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+
+  const hh  = String(ist.getHours()).padStart(2, '0');
+  const mm  = String(ist.getMinutes()).padStart(2, '0');
+  const ss  = String(ist.getSeconds()).padStart(2, '0');
+  const clockEl = document.getElementById('ist-clock');
+  if (clockEl) clockEl.textContent = `${hh}:${mm}:${ss}`;
+
+  const h   = ist.getHours();
+  const m   = ist.getMinutes();
+  const day = ist.getDay();
+
+  const isWeekday = day >= 1 && day <= 5;
+  const afterOpen = (h > 9)  || (h === 9  && m >= 15);
+  const beforeClose = !((h > 15) || (h === 15 && m >= 30));
+  const isOpen = isWeekday && afterOpen && beforeClose;
+
+  const badge = document.getElementById('market-badge');
+  const label = document.getElementById('market-label');
+  if (badge && label) {
+    badge.className = 'market-badge' + (isOpen ? '' : ' closed');
+    label.textContent = isOpen ? 'MARKET OPEN' : 'MARKET CLOSED';
+  }
+}
+
+newUpdateMarketStatus();
+setInterval(newUpdateMarketStatus, 1000);
+
+// --- Rotating Placeholder ---
+const PLACEHOLDERS = [
+  'Search RELIANCE, TCS, INFY…',
+  'Try "Tata Consultancy Services"',
+  'Enter NSE ticker: HDFCBANK',
+  'Search "Infosys" or INFY.NS',
+  'Try WIPRO, BAJFINANCE, ITC…',
+  'Enter company name or symbol',
+];
+
+let phIndex = 0;
+const searchInput = document.getElementById('query');
+const phEl = document.getElementById('rotating-placeholder');
+if(phEl) phEl.textContent = PLACEHOLDERS[0];
+
+function cyclePlaceholder() {
+  if(!phEl) return;
+  phEl.classList.remove('ph-enter');
+  phEl.classList.add('ph-exit');
+  setTimeout(() => {
+    phIndex = (phIndex + 1) % PLACEHOLDERS.length;
+    phEl.textContent = PLACEHOLDERS[phIndex];
+    phEl.classList.remove('ph-exit');
+    phEl.classList.add('ph-enter');
+  }, 280);
+}
+setInterval(cyclePlaceholder, 3200);
+
+function checkInputLengthForButton() {
+   const btn = document.getElementById('search-btn');
+   if(searchInput && searchInput.value.trim().length > 0) {
+      if(btn) btn.disabled = false;
+   } else {
+      if(btn) btn.disabled = true;
+   }
+}
+checkInputLengthForButton();
+
+searchInput.addEventListener('input', () => {
+  if(phEl) {
+    phEl.style.display = searchInput.value ? 'none' : '';
+    checkInputLengthForButton();
+  }
+});
+
+function showPlaceholder() {
+  if(phEl) phEl.style.display = '';
+}
+
+// --- Vanish Animation ---
+async function vanishAndSubmit(inputEl, canvasEl, onComplete) {
+  const ctx = canvasEl.getContext('2d');
+
+  canvasEl.width  = inputEl.offsetWidth  * 2;
+  canvasEl.height = inputEl.offsetHeight * 2;
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+  const cs = getComputedStyle(inputEl);
+  const fs = parseFloat(cs.fontSize) * 2;
+  ctx.font      = `${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+  ctx.fillStyle = '#ffffff';
+  
+  // Try to match exact drawing position. The input text starts around '36px' padding.
+  ctx.fillText(inputEl.value, 72, fs + 6); 
+
+  const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+  const d = imgData.data;
+  const particles = [];
+  for (let y = 0; y < canvasEl.height; y++) {
+    for (let x = 0; x < canvasEl.width; x++) {
+      const i = (y * canvasEl.width + x) * 4;
+      if (d[i+3] > 128) {
+        particles.push({ x, y, r: 1,
+          color: `rgba(${d[i]},${d[i+1]},${d[i+2]},${d[i+3]/255})` });
+      }
+    }
+  }
+
+  canvasEl.style.opacity = '1';
+  inputEl.style.color = 'transparent';
+  inputEl.disabled = true;
+
+  let pos = particles.reduce((m, p) => Math.max(m, p.x), 0);
+  let alive = [...particles];
+
+  await new Promise(resolve => {
+    (function frame() {
+      requestAnimationFrame(() => {
+        ctx.clearRect(pos - 10, 0, canvasEl.width, canvasEl.height);
+        const next = [];
+        for (const p of alive) {
+          if (p.x < pos) { next.push(p); continue; }
+          if (p.r <= 0) continue;
+          p.x += Math.random() > .5 ? 1 : -1;
+          p.y += Math.random() > .5 ? 1 : -1;
+          p.r -= 0.05 * Math.random();
+          if (p.x > pos) {
+            ctx.beginPath();
+            ctx.rect(p.x, p.y, p.r, p.r);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+          }
+          next.push(p);
+        }
+        alive = next;
+        pos -= 8;
+        if (alive.length > 0) frame();
+        else {
+          canvasEl.style.opacity = '0';
+          inputEl.style.color = '';
+          inputEl.disabled = false;
+          resolve();
+        }
+      });
+    })();
+  });
+
+  onComplete();
+}
+\n</script>
 </body>
 </html>
