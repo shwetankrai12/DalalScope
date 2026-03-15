@@ -98,6 +98,10 @@ async def get_stock_news(ticker: str):
     if not ticker:
         raise HTTPException(status_code=400, detail="ticker parameter is required")
     
+    ticker = ticker.upper()
+    if not ticker.endswith(".NS"):
+        ticker = f"{ticker}.NS"
+    
     data = fetch_news(ticker)
     
     if "error" in data and not data["headlines"]:

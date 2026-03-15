@@ -1,6 +1,8 @@
 """OHLCV data fetcher using yfinance."""
 
 import pandas as pd
+import yfinance as yf
+import urllib.parse
 from datetime import datetime, date
 from typing import Optional
 
@@ -29,9 +31,6 @@ def fetch_ohlcv(
     """
     if mode not in ["latest", "history"]:
         raise ValueError(f"Invalid mode '{mode}'. Must be 'latest' or 'history'.")
-    
-    # Import yfinance locally to prevent blocking app startup time
-    import yfinance as yf
     
     try:
         # Download data using yfinance
@@ -188,7 +187,6 @@ def fetch_news(ticker: str) -> dict:
 
         # Clean Google News redirect URLs — extract real URL
         if "news.google.com" in link:
-            import urllib.parse
             parsed = urllib.parse.urlparse(link)
             qs = urllib.parse.parse_qs(parsed.query)
             link = qs.get("url", [link])[0] if "url" in qs else link
