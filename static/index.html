@@ -779,22 +779,34 @@
                 grid-template-columns: 1fr;
             }
 
-            .stitch-form-old {
+            .search-form {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 16px;
+                padding: 16px;
             }
 
-            .action-buttons {
+            .search-input-wrap,
+            .stitch-toggle-group,
+            #search-btn {
                 width: 100%;
-                flex-direction: column;
             }
 
-            .stitch-btn {
-                width: 100%;
+            .toggle-btn {
+                flex: 1;
             }
 
             .date-pickers {
                 flex-direction: column;
+                width: 100%;
+            }
+
+            .date-group {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                width: 100%;
             }
 
             .date-pickers.stitch-hidden {
