@@ -10,7 +10,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Styles -->
-    <style>\n:root {
+    <style>
+:root {
   --bg:          #060a10;
   --surface:     #0d1520;
   --surface2:    #111c2d;
@@ -21,11 +22,18 @@
   --accent-dim:  rgba(0,200,150,0.18);
   --text:        #e2eaf4;
   --text-muted:  #5b7aa0;
+  --text-weak:   #8899aa;
   --text-faint:  #2a3f5a;
   --red:         #f43f5e;
   --yellow:      #fbbf24;
   --mono:        'JetBrains Mono', monospace;
   --sans:        'Space Grotesk', sans-serif;
+  --header-bg:   #05080c;
+  --input-bg:    rgba(0, 0, 0, 0.2);
+  --toggle-bg:   rgba(0, 0, 0, 0.3);
+  --toggle-act:  rgba(255, 255, 255, 0.1);
+  --table-hover: rgba(255, 255, 255, 0.04);
+  --highlight-bg:rgba(255, 255, 255, 0.02);
 }
 
 
@@ -58,9 +66,16 @@ body.theme-light {
   --accent-dim:  rgba(0, 156, 115, 0.15);
   --text:        #1e293b;
   --text-muted:  #64748b;
-  --text-faint:  #94a3b8;
+  --text-weak:   #64748b;
+  --text-faint:  #cbd5e1;
   --red:         #e11d48;
   --yellow:      #d97706;
+  --header-bg:   #ffffff;
+  --input-bg:    #ffffff;
+  --toggle-bg:   #e2e8f0;
+  --toggle-act:  #ffffff;
+  --table-hover: rgba(0, 0, 0, 0.03);
+  --highlight-bg:rgba(0, 0, 0, 0.02);
 }
 
 /* Typography Helpers */
@@ -87,7 +102,7 @@ body.theme-light {
 /* Top Bar */
 .top-bar {
     width: 100%;
-    background-color: #05080c;
+    background-color: var(--header-bg);
     border-bottom: 1px solid var(--border);
     padding: 12px 24px;
     display: flex;
@@ -209,7 +224,7 @@ body.theme-light {
 
 .stitch-input, .stitch-date-picker {
     width: 100%;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--input-bg);
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -240,7 +255,7 @@ body.theme-light {
 /* Toggle Group */
 .stitch-toggle-group {
     display: flex;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--toggle-bg);
     border: 1px solid var(--border);
     border-radius: 4px;
     overflow: hidden;
@@ -265,8 +280,8 @@ body.theme-light {
 }
 
 .stitch-toggle-group input[type="radio"]:checked + .toggle-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text);
+    background-color: var(--toggle-act);
+    color: var(--accent);
 }
 
 /* Date Pickers Transition */
@@ -553,7 +568,7 @@ body.theme-light {
 }
 
 .stitch-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: var(--table-hover);
     box-shadow: inset 2px 0 0 var(--accent);
 }
 
@@ -569,7 +584,7 @@ body.theme-light {
 .highlight-td {
     color: var(--text);
     font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: var(--highlight-bg);
 }
 
 /* Row Indicators */
@@ -856,7 +871,8 @@ body.theme-light {
   color: var(--text);
   font-family: var(--mono);
 }
-\n</style>
+
+</style>
 </head>
 <body class="theme-terminal">
     <!-- Top Bar -->
@@ -1059,7 +1075,8 @@ body.theme-light {
 
     </section>
 
-    <script>\nlet currentSort = { col: 'date', asc: false };
+    <script>
+let currentSort = { col: 'date', asc: false };
 let currentData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
