@@ -1,152 +1,136 @@
 # DalalScope 📈
 
-A full-stack NSE (National Stock Exchange of India) stock market 
-dashboard that fetches and displays real-time OHLCV 
-(Open, High, Low, Close, Volume) data for Indian stocks.
-
-🔗 **Live Demo**: https://dalalscope.onrender.com
+A Python-based stock market data tool for the Indian (NSE) and US markets — available as both a **CLI tool** and a **web application** with a REST API.
 
 ---
 
 ## What It Does
 
-DalalScope lets you search any NSE-listed stock by ticker symbol 
-or company name and instantly view:
+DalalScope fetches OHLCV (Open, High, Low, Close, Volume) data for NSE-listed Indian stocks and US stocks like AAPL and MSFT. You can use it straight from the terminal or through a browser-friendly web interface backed by a REST API.
 
-- **Latest trading day** OHLCV data with summary stats
-- **Historical data** for any custom date range
-- **CSV export** of any fetched data
-- Real-time **NSE market open/closed** status in IST
+---
+
+## Project Structure
+
+```
+DalalScope/
+├── scraper.py          # Main CLI entry point with argument parsing
+├── resolver.py         # Company name → NSE ticker symbol resolution
+├── fetcher.py          # OHLCV data fetching via yfinance
+├── output.py           # Table formatting and CSV export
+├── api.py              # REST API server (web backend)
+├── extract_values.py   # Value extraction utilities
+├── quick_extract.py    # Quick data extraction helper
+├── simple_extract.py   # Simplified extraction module
+├── static/             # Frontend assets (HTML, CSS, JS)
+├── requirements.txt    # Python dependencies
+├── AAPL_ohlcv.csv      # Sample data — Apple Inc.
+├── MSFT_ohlcv.csv      # Sample data — Microsoft
+├── RELIANCE.NS_ohlcv.csv  # Sample data — Reliance Industries
+└── TCS.NS_ohlcv.csv    # Sample data — Tata Consultancy Services
+```
+
+---
+
+## Installation
+
+```bash
+git clone https://github.com/shwetankrai12/DalalScope.git
+cd DalalScope
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+### CLI Mode
+
+**Fetch latest trading day data:**
+```bash
+python scraper.py --ticker TCS --mode latest
+python scraper.py --company "Tata Consultancy Services" --mode latest
+```
+
+**Fetch historical data:**
+```bash
+python scraper.py --ticker RELIANCE --mode history --start 2025-12-01 --end 2025-12-31
+python scraper.py --ticker TCS --mode history --start 2024-01-01 --end 2024-12-31
+```
+
+**Save output to a directory:**
+```bash
+python scraper.py --ticker TCS --mode latest --output ./data
+```
+
+### Web App / API Mode
+
+Start the API server:
+```bash
+python api.py
+```
+
+Then open the browser and visit `http://localhost:<port>` to use the web interface, or hit the REST endpoints directly.
+
+---
+
+## Features
+
+- **NSE Focus** — built specifically for Indian stock market data from NSE
+- **Ticker Resolution** — accepts company names and auto-resolves to NSE ticker symbols (with `.NS` suffix)
+- **Dual Mode**
+  - `latest` — most recent trading day data
+  - `history` — data for a custom date range
+- **Dual Interface**
+  - CLI for scripting and terminal use
+  - Web frontend + REST API (`api.py` + `static/`) for browser-based access
+- **CSV Export** — saves data as `<TICKER>_ohlcv.csv` files
+- **Console Table** — formatted output using `tabulate`
+- **Comprehensive Error Handling** — invalid tickers, missing dates, bad formats, API failures
+- **Type Hints & Docstrings** — throughout the codebase for IDE support and readability
+
+---
+
+## Data Source
+
+Uses **Yahoo Finance** (`yfinance`) for reliable NSE and US stock market data.
+
+---
+
+## Date Format
+
+All dates must follow `YYYY-MM-DD` format — e.g., `2025-12-31`.
+
+---
+
+## Error Handling
+
+| Situation | Behaviour |
+|---|---|
+| Invalid company name | Error message + exit code 1 |
+| Missing dates in history mode | Clear instructions with examples |
+| Invalid date format | Format validation with example |
+| No data for date range | Graceful error exit |
+| API/network error | Wrapped with informative message |
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Data Source | `yfinance` (Yahoo Finance API) |
-| Backend | Python + FastAPI |
-| Server | Uvicorn (ASGI) |
-| Frontend | HTML + CSS + JavaScript |
-| Hosting | Render.com (free tier) |
-| Uptime | UptimeRobot (keeps server awake 24/7) |
+|---|---|
+| Data fetching | Python, yfinance |
+| CLI | argparse |
+| Web backend | Python (api.py) |
+| Web frontend | HTML, CSS, JavaScript |
+| Data output | tabulate, CSV |
 
 ---
 
-## Project Structure
+## Sample Data
 
-```text
-DalalScope/
-├── api.py           # FastAPI backend — REST API endpoints
-├── resolver.py      # Company name → NSE ticker resolution
-├── fetcher.py       # yfinance OHLCV data fetching
-├── output.py        # Table formatting and CSV export
-├── scraper.py       # Original CLI tool (kept intact)
-├── Procfile         # Render deployment start command
-├── runtime.txt      # Python version pin (3.11.9)
-├── requirements.txt # Project dependencies
-├── static/
-│   └── index.html   # Full frontend dashboard UI
-└── README.md
-```
-
----
-
-## API Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/stock/latest?ticker=TCS` | Latest trading day OHLCV |
-| `GET /api/stock/history?ticker=RELIANCE&start=2024-01-01&end=2024-12-31` | Historical OHLCV |
-| `GET /api/stock/resolve?company=Tata+Consultancy+Services` | Resolve company name to ticker |
-| `GET /health` | Health check |
-
----
-
-## Run Locally
-
-```bash
-# Clone the repo
-git clone https://github.com/shwetankrai12/DalalScope
-cd DalalScope
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the server
-python -m uvicorn api:app --host 0.0.0.0 --port 8000
-
-# Open in browser
-http://localhost:8000
-```
-
----
-
-## How It Was Built
-
-This project was **vibe coded** — built iteratively using 
-**GitHub Copilot** and **AI-assisted prompting** with 
-**Antigravity** as the development environment.
-
-### Development Journey
-
-**Started as a CLI tool**
-The project began as a pure Python command-line scraper 
-(`scraper.py`) that printed OHLCV tables in the terminal 
-and exported CSVs.
-
-**Evolved into a full-stack web app**
-The CLI was wrapped with a FastAPI backend and a dark 
-terminal-aesthetic frontend dashboard was built on top of it.
-
-**Complications faced along the way:**
-
-- 🐛 **Python 3.14 conflict** — Render defaulted to Python 3.14 
-  which broke pandas. Fixed by pinning `PYTHON_VERSION=3.11.9` 
-  as an environment variable on Render.
-
-- 🐛 **Case sensitivity on Linux** — Procfile had `Python` 
-  (capital P) which worked on Windows but failed on Render's 
-  Linux servers. Fixed by changing to `python` (lowercase).
-
-- 🐛 **Uvicorn not found (status 127)** — Render was using its 
-  own Start Command instead of Procfile. Fixed by updating the 
-  Start Command directly in Render dashboard settings.
-
-- 🐛 **Cold start delays** — Render's free tier sleeps after 
-  15 minutes of inactivity causing 50+ second delays. Fixed 
-  using UptimeRobot to ping the server every 5 minutes.
-
-- 🐛 **CSV export not working** — Button was permanently 
-  disabled due to broken enable/disable logic. Fixed with 
-  correct client-side Blob download implementation.
-
----
-
-## Deployment
-
-Hosted on **[Render.com](https://render.com)** free tier.
-
-- Auto-deploys on every `git push` to `main`
-- Start command: `python -m uvicorn api:app --host 0.0.0.0 --port $PORT`
-- Python version: 3.11.9 (set via environment variable)
-
-**Uptime**: Kept alive 24/7 using 
-**[UptimeRobot](https://uptimerobot.com)** which pings 
-the server every 5 minutes to prevent cold starts.
-
----
-
-## Future Ideas
-
-- [ ] Candlestick chart visualization
-- [ ] Multiple ticker comparison
-- [ ] Portfolio tracker
-- [ ] Price alerts via email
-- [ ] Sensex / Nifty 50 index overview
-
----
-
-## Author
-
-Built by [@shwetankrai12](https://github.com/shwetankrai12)
+The repo includes pre-fetched sample CSVs for quick testing:
+- `AAPL_ohlcv.csv` — Apple Inc. (US)
+- `MSFT_ohlcv.csv` — Microsoft (US)
+- `RELIANCE.NS_ohlcv.csv` — Reliance Industries (NSE)
+- `TCS.NS_ohlcv.csv` — Tata Consultancy Services (NSE)
