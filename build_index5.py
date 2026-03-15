@@ -1,0 +1,351 @@
+import re
+
+with open('static/index.html', 'r', encoding='utf-8') as f:
+    html = f.read()
+
+# Match the end of `function drawChart` correctly
+match = re.search(r'function drawChart\(dataArray, ticker\) \{', html)
+if not match:
+    print("Error: Could not find 'function drawChart' marker.")
+    exit(1)
+
+top_half = html[:match.start()]
+
+bottom_half = """function drawChart(ticker, history) {
+    if (!history.dates || history.dates.length === 0) return;
+    
+    const ctx = chartCanvas.getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    
+    const dates = history.dates.map(d => new Date(d));
+    const closes = history.closes;
+    const isUp = closes[closes.length - 1] >= closes[0];
+    const color = isUp ? '#00e676' : '#ff3d00';
+    const fill = isUp ? 'rgba(0, 230, 118, 0.1)' : 'rgba(255, 61, 0, 0.1)';
+    
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: ticker,
+                data: closes,
+                borderColor: color,
+                backgroundColor: fill,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#888',
+                    bodyColor: '#fff',
+                    borderColor: '#333',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return '₹' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { tooltipFormat: 'dd MMM yyyy' },
+                    grid: { color: '#222', drawBorder: false },
+                    ticks: { color: '#666', maxRotation: 0 }
+                },
+                y: {
+                    grid: { color: '#222', drawBorder: false },
+                    ticks: {
+                        color: '#666',
+                        callback: function(value) { return '₹' + value; }
+                    }
+                }
+            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+    });
+
+    // Wire: Call News fetcher alongside drawChart
+    fetchNews(ticker);
+}
+
+// Formatters
+const fmtCurrency = (val) => val != null ? `₹${Number(val).toFixed(2)}` : '--';
+const fmtDate = (dateStr) => {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, ' ');
+};
+const fmtVolume = (num) => {
+    if (num == null) return '--';
+    if (num >= 10000000) return (num / 10000000).toFixed(2) + 'Cr';
+    if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+    return num.toString();
+};
+const fmtMarketCap = (num) => {
+    if (num == null) return '--';
+    if (num >= 10000000000000) return '₹' + (num / 10000000000000).toFixed(2) + 'T';
+    if (num >= 1000000000) return '₹' + (num / 1000000000).toFixed(2) + 'B';
+    if (num >= 1000000) return '₹' + (num / 1000000).toFixed(2) + 'M';
+    return '₹' + num.toString();
+};
+
+// -- Placeholder Engine --
+const PLACEHOLDERS = [
+  'Search "Reliance" or RELIANCE.NS',
+  'Search "TCS" or TCS.NS',
+  'Search "HDFC Bank" or HDFCBANK.NS',
+  'Search "Infosys" or INFY.NS',
+  'Try WIPRO, BAJFINANCE, ITC…',
+  'Enter company name or symbol',
+];
+
+let phIndex = 0;
+const phEl = document.getElementById('rotating-placeholder');
+if(phEl) phEl.textContent = PLACEHOLDERS[0];
+
+function cyclePlaceholder() {
+  if(!phEl) return;
+  phEl.classList.remove('ph-enter');
+  phEl.classList.add('ph-exit');
+  setTimeout(() => {
+    phIndex = (phIndex + 1) % PLACEHOLDERS.length;
+    phEl.textContent = PLACEHOLDERS[phIndex];
+    phEl.classList.remove('ph-exit');
+    phEl.classList.add('ph-enter');
+  }, 280);
+}
+setInterval(cyclePlaceholder, 3200);
+
+function checkInputLengthForButton() {
+   const btn = document.getElementById('search-btn');
+   if(queryInput && queryInput.value.trim().length > 0) {
+      if(btn) btn.disabled = false;
+   } else {
+      if(btn) btn.disabled = true;
+   }
+}
+checkInputLengthForButton();
+
+queryInput.addEventListener('input', () => {
+  if(phEl) {
+    phEl.style.display = queryInput.value ? 'none' : '';
+    checkInputLengthForButton();
+  }
+});
+
+function showPlaceholder() {
+  if(phEl) phEl.style.display = '';
+}
+
+// --- Vanish Animation ---
+async function vanishAndSubmit(inputEl, canvasEl, onComplete) {
+  const ctx = canvasEl.getContext('2d');
+
+  canvasEl.width  = inputEl.offsetWidth  * 2;
+  canvasEl.height = inputEl.offsetHeight * 2;
+  ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+  const cs = getComputedStyle(inputEl);
+  const fs = parseFloat(cs.fontSize) * 2;
+  ctx.font      = `${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+  ctx.fillStyle = '#ffffff';
+  
+  // Try to match exact drawing position. The input text starts around '36px' padding.
+  ctx.fillText(inputEl.value, 72, fs + 6); 
+
+  const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+  const d = imgData.data;
+  const particles = [];
+  for (let y = 0; y < canvasEl.height; y++) {
+    for (let x = 0; x < canvasEl.width; x++) {
+      const i = (y * canvasEl.width + x) * 4;
+      if (d[i+3] > 128) {
+        particles.push({ x, y, r: 1,
+          color: `rgba(${d[i]},${d[i+1]},${d[i+2]},${d[i+3]/255})` });
+      }
+    }
+  }
+
+  canvasEl.style.opacity = '1';
+  inputEl.style.color = 'transparent';
+  inputEl.disabled = true;
+
+  let pos = particles.reduce((m, p) => Math.max(m, p.x), 0);
+  let alive = [...particles];
+
+  await new Promise(resolve => {
+    if (alive.length === 0) {
+      canvasEl.style.opacity = '0';
+      inputEl.style.color = '';
+      inputEl.disabled = false;
+      resolve();
+      return;
+    }
+    (function frame() {
+      requestAnimationFrame(() => {
+        ctx.clearRect(pos - 10, 0, canvasEl.width, canvasEl.height);
+        const next = [];
+        for (const p of alive) {
+          if (p.x < pos) { next.push(p); continue; }
+          if (p.r <= 0) continue;
+          p.x += Math.random() > .5 ? 1 : -1;
+          p.y += Math.random() > .5 ? 1 : -1;
+          p.r -= 0.05 * Math.random();
+          if (p.x > pos) {
+            ctx.beginPath();
+            ctx.rect(p.x, p.y, p.r, p.r);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+          }
+          next.push(p);
+        }
+        alive = next;
+        pos -= 8;
+        if (alive.length > 0) frame();
+        else {
+          canvasEl.style.opacity = '0';
+          inputEl.style.color = '';
+          inputEl.disabled = false;
+          resolve();
+        }
+      });
+    })();
+  });
+
+  onComplete();
+}
+
+/* ── News + Sentiment ──────────────────────────────────── */
+
+async function fetchNews(ticker) {
+  const section = document.getElementById('news-section');
+  const container = document.getElementById('headlines-container');
+
+  if (!section) return;
+
+  // Show section with skeleton loaders
+  section.classList.add('visible');
+  container.innerHTML = `
+    <div class="news-skeleton"></div>
+    <div class="news-skeleton"></div>
+    <div class="news-skeleton"></div>
+  `;
+
+  try {
+    const res = await fetch(`/api/stock/news?ticker=${encodeURIComponent(ticker)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderNews(data);
+  } catch (err) {
+    container.innerHTML = `
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--red);padding:.75rem;">
+        Could not load news. Please try again.
+      </div>`;
+  }
+}
+
+function renderNews(data) {
+  const signal   = data.signal;   // "BULLISH" | "BEARISH" | "NEUTRAL"
+  const pct      = data.bullish_pct;
+  const count    = data.headline_count;
+  const bd       = data.breakdown;
+
+  // Signal banner
+  const banner = document.getElementById('signal-banner');
+  const label  = document.getElementById('signal-label');
+  const arrow  = document.getElementById('signal-arrow');
+  const text   = document.getElementById('signal-text');
+  const meta   = document.getElementById('signal-meta');
+  const fill   = document.getElementById('sentiment-fill');
+  const pctEl  = document.getElementById('sentiment-pct');
+
+  banner.className = `signal-banner ${signal}`;
+  label.className  = `signal-label ${signal}`;
+  fill.className   = `sentiment-fill ${signal}`;
+  arrow.textContent = signal === 'BULLISH' ? '▲' : signal === 'BEARISH' ? '▼' : '→';
+  text.textContent  = signal;
+  meta.textContent  = `Based on ${count} headline${count !== 1 ? 's' : ''} · Google News · NSE`;
+  fill.style.width  = pct + '%';
+  pctEl.textContent = pct + '%';
+
+  // Breakdown
+  document.getElementById('bd-bullish').textContent = bd.bullish;
+  document.getElementById('bd-bearish').textContent = bd.bearish;
+  document.getElementById('bd-neutral').textContent = bd.neutral;
+
+  // Headlines
+  const container = document.getElementById('headlines-container');
+  if (!data.headlines || data.headlines.length === 0) {
+    container.innerHTML = `
+      <div style="font-family:var(--mono);font-size:.8rem;color:var(--text-muted);padding:.75rem;">
+        No headlines found for this ticker.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = data.headlines.map(h => {
+    const time = formatNewsTime(h.published);
+    return `
+      <a class="headline-card ${h.sentiment}"
+         href="${escHtml(h.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="headline-left">
+          <div class="headline-title">${escHtml(h.title)}</div>
+          <div class="headline-meta">
+            <span>${escHtml(h.source)}</span>
+            <span>${time}</span>
+          </div>
+        </div>
+        <div class="headline-right">
+          <span class="sentiment-pill ${h.sentiment}">${h.sentiment}</span>
+        </div>
+      </a>`;
+  }).join('');
+}
+
+function formatNewsTime(pubDateStr) {
+  if (!pubDateStr) return '';
+  try {
+    const d    = new Date(pubDateStr);
+    const now  = new Date();
+    const diff = Math.floor((now - d) / 60000); // minutes
+    if (diff < 60)  return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+  } catch { return ''; }
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function hideNewsSection() {
+  const section = document.getElementById('news-section');
+  if(section) section.classList.remove('visible');
+}
+
+</script>
+</body>
+</html>
+"""
+
+new_html = top_half + bottom_half
+with open('static/index.html', 'w', encoding='utf-8') as f:
+    f.write(new_html)
+print("index.html fully repaired from drawChart to EOF.")
