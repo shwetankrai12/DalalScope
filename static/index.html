@@ -1284,6 +1284,405 @@
             color: var(--text);
             font-family: var(--mono);
         }
+
+        /* ── Portfolio Tracker ──────────────────────────────────── */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 0;
+            padding: 0 4px;
+        }
+
+        .nav-tab {
+            font-family: var(--mono);
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color .2s, border-color .2s;
+        }
+
+        .nav-tab:hover {
+            color: var(--text);
+        }
+
+        .nav-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* Tab panels */
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Portfolio summary bar */
+        .pt-summary-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pt-stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+
+        .pt-stat-label {
+            font-family: var(--sans);
+            font-size: .7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 6px;
+        }
+
+        .pt-stat-value {
+            font-family: var(--mono);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .pt-stat-sub {
+            font-family: var(--mono);
+            font-size: .72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .pt-pos {
+            color: var(--accent) !important;
+        }
+
+        .pt-neg {
+            color: var(--red) !important;
+        }
+
+        /* Portfolio table */
+        .pt-table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .pt-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pt-table-title {
+            font-family: var(--mono);
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: .06em;
+        }
+
+        .pt-table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pt-btn {
+            font-family: var(--mono);
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            transition: all .2s;
+        }
+
+        .pt-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pt-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .pt-btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        .pt-btn-primary:hover {
+            background: #00e5ac;
+            border-color: #00e5ac;
+            color: var(--bg);
+        }
+
+        .pt-table-wrap {
+            overflow-x: auto;
+        }
+
+        .pt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--mono);
+            font-size: .825rem;
+        }
+
+        .pt-table th {
+            padding: 10px 16px;
+            text-align: right;
+            font-family: var(--sans);
+            font-size: .7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .pt-table th:first-child {
+            text-align: left;
+        }
+
+        .pt-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            color: var(--text);
+        }
+
+        .pt-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .pt-table tbody tr {
+            transition: background .15s;
+        }
+
+        .pt-table tbody tr:hover {
+            background: var(--table-hover);
+        }
+
+        .pt-row {
+            opacity: 0;
+            animation: pt-row-in .3s ease forwards;
+        }
+
+        @keyframes pt-row-in {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pt-num {
+            text-align: right;
+        }
+
+        .pt-bold {
+            font-weight: 700;
+        }
+
+        .pt-pct {
+            display: block;
+            font-size: .68rem;
+            opacity: .8;
+            margin-top: 1px;
+        }
+
+        .pt-ticker-cell {
+            text-align: left;
+        }
+
+        .pt-ticker-badge {
+            display: inline-block;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(0, 200, 150, .25);
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: .7rem;
+            font-weight: 700;
+            margin-right: 8px;
+            letter-spacing: .04em;
+        }
+
+        .pt-company {
+            font-size: .78rem;
+            color: var(--text-muted);
+        }
+
+        .pt-ltp {
+            color: var(--accent2);
+        }
+
+        .pt-loading {
+            color: var(--text-faint);
+            animation: blink .8s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .pt-del-btn {
+            background: none;
+            border: none;
+            color: var(--text-faint);
+            cursor: pointer;
+            font-size: .8rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: color .2s, background .2s;
+        }
+
+        .pt-del-btn:hover {
+            color: var(--red);
+            background: rgba(244, 63, 94, .1);
+        }
+
+        /* Empty state */
+        .pt-empty {
+            padding: 60px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-family: var(--mono);
+            font-size: .85rem;
+        }
+
+        .pt-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: .5;
+        }
+
+        .pt-hidden {
+            display: none !important;
+        }
+
+        /* Add Holding Modal */
+        .pt-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pt-modal-backdrop.pt-modal-open {
+            display: flex;
+        }
+
+        .pt-modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .pt-modal-title {
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+            letter-spacing: .04em;
+        }
+
+        .pt-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .pt-field label {
+            font-family: var(--sans);
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+        }
+
+        .pt-field input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: .875rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .pt-field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
+
+        .pt-ltp-hint {
+            font-family: var(--mono);
+            font-size: .7rem;
+            color: var(--accent);
+            min-height: 1em;
+        }
+
+        .pt-form-error {
+            font-family: var(--mono);
+            font-size: .75rem;
+            color: var(--red);
+            min-height: 1em;
+        }
+
+        .pt-modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            .pt-summary-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .pt-company {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .pt-summary-bar {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -1312,178 +1711,302 @@
     </header>
 
     <main class="dashboard-container">
-        <!-- Search Panel -->
-        <section class="stitch-card search-panel">
-            <form id="search-form" class="search-form">
-                <div class="search-input-wrap">
-                    <span class="search-icon">🔍</span>
-                    <canvas id="particle-canvas"
-                        style="position: absolute; left: 36px; top: 0; pointer-events: none; z-index: 5; transform: scale(0.5); transform-origin: top left; filter: invert(1); opacity: 0; transition: opacity .1s;"></canvas>
-                    <input type="text" id="query" name="query" class="search-input stitch-input" autocomplete="off"
-                        autofocus required
-                        style="position: relative; z-index: 2; border: none; background: transparent; padding-left: 36px;">
-                    <span id="rotating-placeholder"
-                        style="position: absolute; left: 36px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.875rem; color: var(--text-muted); pointer-events: none; z-index: 3; white-space: nowrap; overflow: hidden; max-width: calc(100% - 40px); text-overflow: ellipsis; transition: opacity .28s ease, transform .28s ease;"></span>
-                </div>
+        <!-- Nav Tabs -->
+        <nav class="stitch-card nav-tabs" style="padding: 0 8px;">
+            <button class="nav-tab active" data-tab="tab-market" onclick="switchTab('tab-market', this)">📈 MARKET
+                DATA</button>
+            <button class="nav-tab" data-tab="tab-portfolio" onclick="switchTab('tab-portfolio', this)">💼
+                PORTFOLIO</button>
+        </nav>
 
-                <div class="mode-group stitch-toggle-group">
-                    <input type="radio" name="mode" value="latest" id="mode-latest" checked>
-                    <label for="mode-latest" class="toggle-btn">LATEST</label>
-                    <input type="radio" name="mode" value="history" id="mode-history">
-                    <label for="mode-history" class="toggle-btn">HISTORY</label>
-                </div>
+        <!-- Market Data Tab -->
+        <div id="tab-market" class="tab-panel active">
+            <!-- Search Panel -->
+            <section class="stitch-card search-panel">
+                <form id="search-form" class="search-form">
+                    <div class="search-input-wrap">
+                        <span class="search-icon">🔍</span>
+                        <canvas id="particle-canvas"
+                            style="position: absolute; left: 36px; top: 0; pointer-events: none; z-index: 5; transform: scale(0.5); transform-origin: top left; filter: invert(1); opacity: 0; transition: opacity .1s;"></canvas>
+                        <input type="text" id="query" name="query" class="search-input stitch-input" autocomplete="off"
+                            autofocus required
+                            style="position: relative; z-index: 2; border: none; background: transparent; padding-left: 36px;">
+                        <span id="rotating-placeholder"
+                            style="position: absolute; left: 36px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 0.875rem; color: var(--text-muted); pointer-events: none; z-index: 3; white-space: nowrap; overflow: hidden; max-width: calc(100% - 40px); text-overflow: ellipsis; transition: opacity .28s ease, transform .28s ease;"></span>
+                    </div>
 
-                <div class="date-pickers stitch-hidden" id="date-pickers">
-                    <div class="date-group" id="date-group">
-                        <span class="stitch-label">FROM</span>
-                        <input type="date" id="start-date" class="stitch-date-picker">
-                        <span class="stitch-label">TO</span>
-                        <input type="date" id="end-date" class="stitch-date-picker">
+                    <div class="mode-group stitch-toggle-group">
+                        <input type="radio" name="mode" value="latest" id="mode-latest" checked>
+                        <label for="mode-latest" class="toggle-btn">LATEST</label>
+                        <input type="radio" name="mode" value="history" id="mode-history">
+                        <label for="mode-history" class="toggle-btn">HISTORY</label>
+                    </div>
+
+                    <div class="date-pickers stitch-hidden" id="date-pickers">
+                        <div class="date-group" id="date-group">
+                            <span class="stitch-label">FROM</span>
+                            <input type="date" id="start-date" class="stitch-date-picker">
+                            <span class="stitch-label">TO</span>
+                            <input type="date" id="end-date" class="stitch-date-picker">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="search-btn" class="fetch-btn stitch-btn primary-btn">FETCH DATA →</button>
+                </form>
+                <div class="loading-bar" id="loading-bar"></div>
+                <div id="resolved-helper" class="helper-text stitch-hidden" style="margin-top: 8px;"></div>
+            </section>
+
+            <div id="toast-container" class="toast-container"></div>
+
+            <!-- Main Content -->
+            <div id="dashboard-content" class="dashboard-content">
+                <!-- Summary Cards Row -->
+                <div id="summary-cards" class="summary-cards-row stitch-hidden">
+                    <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 1;">
+                        <div class="card-bar"></div>
+                        <div class="card-title">OPEN</div>
+                        <div class="card-value font-mono" id="val-open">--</div>
+                    </div>
+                    <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 2;">
+                        <div class="card-bar" id="close-bar"></div>
+                        <div class="card-title">CLOSE</div>
+                        <div class="card-value font-mono" id="val-close">--</div>
+                        <div id="val-change" class="change-badge">--</div>
+                    </div>
+                    <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 3;">
+                        <div class="card-bar"></div>
+                        <div class="card-title">RANGE</div>
+                        <div class="card-value font-mono" id="val-range">--</div>
+                    </div>
+                    <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 4;">
+                        <div class="card-bar"></div>
+                        <div class="card-title">VOLUME</div>
+                        <div class="card-value font-mono" id="val-volume">--</div>
                     </div>
                 </div>
 
-                <button type="submit" id="search-btn" class="fetch-btn stitch-btn primary-btn">FETCH DATA →</button>
-            </form>
-            <div class="loading-bar" id="loading-bar"></div>
-            <div id="resolved-helper" class="helper-text stitch-hidden" style="margin-top: 8px;"></div>
-        </section>
+                <!-- Chart Container -->
+                <div class="stitch-card chart-section fade-in-stagger stitch-hidden" style="--stagger-idx: 5;">
+                    <div class="chart-header">
+                        <h3>Price History</h3>
+                    </div>
+                    <div class="chart-wrapper" style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </div>
 
-        <div id="toast-container" class="toast-container"></div>
+                <!-- Data Table Section -->
+                <div class="stitch-card table-section fade-in-stagger" style="--stagger-idx: 6;">
+                    <div class="table-header-context" style="justify-content: space-between; align-items: center;">
+                        <button type="button" id="btn-export" class="stitch-btn ghost-btn" disabled
+                            style="height: 32px; padding: 0 16px; font-size: 0.75rem;">↓ EXPORT CSV</button>
+                        <span id="table-ticker-badge" class="table-badge"></span>
+                    </div>
 
-        <!-- Main Content -->
-        <div id="dashboard-content" class="dashboard-content">
-            <!-- Summary Cards Row -->
-            <div id="summary-cards" class="summary-cards-row stitch-hidden">
-                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 1;">
-                    <div class="card-bar"></div>
-                    <div class="card-title">OPEN</div>
-                    <div class="card-value font-mono" id="val-open">--</div>
-                </div>
-                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 2;">
-                    <div class="card-bar" id="close-bar"></div>
-                    <div class="card-title">CLOSE</div>
-                    <div class="card-value font-mono" id="val-close">--</div>
-                    <div id="val-change" class="change-badge">--</div>
-                </div>
-                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 3;">
-                    <div class="card-bar"></div>
-                    <div class="card-title">RANGE</div>
-                    <div class="card-value font-mono" id="val-range">--</div>
-                </div>
-                <div class="stitch-card summary-card fade-in-stagger" style="--stagger-idx: 4;">
-                    <div class="card-bar"></div>
-                    <div class="card-title">VOLUME</div>
-                    <div class="card-value font-mono" id="val-volume">--</div>
+                    <div id="empty-state" class="stitch-empty-state">
+                        <div class="empty-icon">📊</div>
+                        <p>No data yet — search for a ticker above</p>
+                    </div>
+
+                    <!-- Skeleton Loader -->
+                    <div id="skeleton-loader" class="skeleton-container stitch-hidden">
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row"></div>
+                    </div>
+
+                    <div class="stitch-table-wrapper stitch-hidden" id="table-wrapper">
+                        <table class="stitch-table" id="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="date">DATE <span class="sort-icon"></span></th>
+                                    <th data-sort="open">OPEN <span class="sort-icon"></span></th>
+                                    <th data-sort="high">HIGH <span class="sort-icon"></span></th>
+                                    <th data-sort="low">LOW <span class="sort-icon"></span></th>
+                                    <th data-sort="close" class="highlight-th">CLOSE <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort="volume">VOLUME <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-footer">
+                        <span id="last-updated" class="last-updated stitch-text-muted"></span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Chart Container -->
-            <div class="stitch-card chart-section fade-in-stagger stitch-hidden" style="--stagger-idx: 5;">
-                <div class="chart-header">
-                    <h3>Price History</h3>
+        </div><!-- end tab-market -->
+
+        <!-- Portfolio Tab -->
+        <div id="tab-portfolio" class="tab-panel">
+
+            <!-- Summary Bar -->
+            <div class="pt-summary-bar">
+                <div class="pt-stat">
+                    <div class="pt-stat-label">Invested</div>
+                    <div class="pt-stat-value" id="pt-total-invested">₹0.00</div>
+                    <div class="pt-stat-sub" id="pt-holding-count">0 holdings</div>
                 </div>
-                <div class="chart-wrapper" style="position: relative; height: 350px; width: 100%;">
-                    <canvas id="price-chart"></canvas>
+                <div class="pt-stat">
+                    <div class="pt-stat-label">Current Value</div>
+                    <div class="pt-stat-value" id="pt-total-current">—</div>
+                </div>
+                <div class="pt-stat">
+                    <div class="pt-stat-label">Total P&L</div>
+                    <div class="pt-stat-value" id="pt-total-pnl">—</div>
+                </div>
+                <div class="pt-stat">
+                    <div class="pt-stat-label">Return</div>
+                    <div class="pt-stat-value" id="pt-total-pct">—</div>
                 </div>
             </div>
 
-            <!-- Data Table Section -->
-            <div class="stitch-card table-section fade-in-stagger" style="--stagger-idx: 6;">
-                <div class="table-header-context" style="justify-content: space-between; align-items: center;">
-                    <button type="button" id="btn-export" class="stitch-btn ghost-btn" disabled
-                        style="height: 32px; padding: 0 16px; font-size: 0.75rem;">↓ EXPORT CSV</button>
-                    <span id="table-ticker-badge" class="table-badge"></span>
+            <!-- Holdings Table Card -->
+            <div class="pt-table-card">
+                <div class="pt-table-header">
+                    <span class="pt-table-title">HOLDINGS</span>
+                    <div class="pt-table-actions">
+                        <button class="pt-btn" id="pt-refresh-btn" onclick="refreshPrices()">↻ Refresh Prices</button>
+                        <button class="pt-btn pt-btn-primary" onclick="openAddModal()">+ Add Holding</button>
+                    </div>
                 </div>
 
-                <div id="empty-state" class="stitch-empty-state">
-                    <div class="empty-icon">📊</div>
-                    <p>No data yet — search for a ticker above</p>
+                <!-- Empty State -->
+                <div class="pt-empty" id="pt-empty">
+                    <div class="pt-empty-icon">💼</div>
+                    <p>No holdings yet.</p>
+                    <p style="margin-top:6px;font-size:.75rem;opacity:.7;">Click <strong>+ Add Holding</strong> to get
+                        started.</p>
                 </div>
 
-                <!-- Skeleton Loader -->
-                <div id="skeleton-loader" class="skeleton-container stitch-hidden">
-                    <div class="skeleton-row"></div>
-                    <div class="skeleton-row"></div>
-                    <div class="skeleton-row"></div>
-                    <div class="skeleton-row"></div>
-                    <div class="skeleton-row"></div>
-                </div>
-
-                <div class="stitch-table-wrapper stitch-hidden" id="table-wrapper">
-                    <table class="stitch-table" id="data-table">
+                <!-- Table -->
+                <div class="pt-table-wrap pt-hidden" id="pt-table-wrap">
+                    <table class="pt-table">
                         <thead>
                             <tr>
-                                <th data-sort="date">DATE <span class="sort-icon"></span></th>
-                                <th data-sort="open">OPEN <span class="sort-icon"></span></th>
-                                <th data-sort="high">HIGH <span class="sort-icon"></span></th>
-                                <th data-sort="low">LOW <span class="sort-icon"></span></th>
-                                <th data-sort="close" class="highlight-th">CLOSE <span class="sort-icon"></span></th>
-                                <th data-sort="volume">VOLUME <span class="sort-icon"></span></th>
+                                <th style="text-align:left">STOCK</th>
+                                <th>QTY</th>
+                                <th>AVG BUY</th>
+                                <th>LTP</th>
+                                <th>INVESTED</th>
+                                <th>CURRENT</th>
+                                <th>P&L</th>
+                                <th></th>
                             </tr>
                         </thead>
-                        <tbody id="table-body">
-                            <!-- Rows injected via JS -->
-                        </tbody>
+                        <tbody id="pt-tbody"></tbody>
                     </table>
                 </div>
-                <div class="table-footer">
-                    <span id="last-updated" class="last-updated stitch-text-muted"></span>
+            </div>
+
+        </div><!-- end tab-portfolio -->
+
+
+        <!-- ── News + Sentiment Section ─────────────────────── -->
+        <section id="news-section">
+
+            <!-- Signal banner -->
+            <div class="signal-banner NEUTRAL" id="signal-banner">
+                <div>
+                    <div class="signal-label NEUTRAL" id="signal-label">
+                        <span class="signal-arrow" id="signal-arrow">→</span>
+                        <span id="signal-text">NEUTRAL</span>
+                    </div>
+                    <div class="signal-meta" id="signal-meta">Analysing headlines…</div>
+                </div>
+                <div style="min-width:180px;">
+                    <div
+                        style="font-family:var(--mono);font-size:.68rem;color:var(--text-faint);margin-bottom:6px;letter-spacing:.08em;">
+                        BULLISH SENTIMENT</div>
+                    <div class="sentiment-meter">
+                        <div class="sentiment-fill NEUTRAL" id="sentiment-fill" style="width:50%"></div>
+                    </div>
+                    <div style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted);margin-top:4px;"
+                        id="sentiment-pct">50%</div>
+                </div>
+            </div>
+
+            <!-- Breakdown grid -->
+            <div class="breakdown-grid">
+                <div class="breakdown-card bullish">
+                    <div class="breakdown-number" id="bd-bullish">0</div>
+                    <div class="breakdown-tag">↑ Bullish</div>
+                </div>
+                <div class="breakdown-card bearish">
+                    <div class="breakdown-number" id="bd-bearish">0</div>
+                    <div class="breakdown-tag">↓ Bearish</div>
+                </div>
+                <div class="breakdown-card neutral">
+                    <div class="breakdown-number" id="bd-neutral">0</div>
+                    <div class="breakdown-tag">→ Neutral</div>
+                </div>
+            </div>
+
+            <!-- Headlines list -->
+            <div class="news-list">
+                <div class="news-section-title">Latest Headlines</div>
+                <div id="headlines-container">
+                    <!-- Skeleton loaders shown while fetching -->
+                    <div class="news-skeleton"></div>
+                    <div class="news-skeleton"></div>
+                    <div class="news-skeleton"></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Add Holding Modal -->
+        <div class="pt-modal-backdrop" id="pt-modal" onclick="if(event.target===this)closeAddModal()">
+            <div class="pt-modal-box">
+                <div class="pt-modal-title">➕ Add Holding</div>
+
+                <div class="pt-field">
+                    <label for="pt-form-ticker">NSE Ticker</label>
+                    <input type="text" id="pt-form-ticker" placeholder="e.g. TCS" autocomplete="off"
+                        oninput="this.value=this.value.toUpperCase()" onblur="handleTickerBlur()">
+                    <span class="pt-ltp-hint" id="pt-ltp-hint"></span>
+                </div>
+
+                <div class="pt-field">
+                    <label for="pt-form-company">Company Name <span style="opacity:.5">(optional)</span></label>
+                    <input type="text" id="pt-form-company" placeholder="e.g. Tata Consultancy Services">
+                </div>
+
+                <div class="pt-field">
+                    <label for="pt-form-qty">Quantity (shares)</label>
+                    <input type="number" id="pt-form-qty" placeholder="e.g. 10" min="0.0001" step="any">
+                </div>
+
+                <div class="pt-field">
+                    <label for="pt-form-price">Avg Buy Price (₹)</label>
+                    <input type="number" id="pt-form-price" placeholder="e.g. 3500.00" min="0.01" step="0.01">
+                </div>
+
+                <div class="pt-form-error" id="pt-form-error"></div>
+
+                <div class="pt-modal-footer">
+                    <button class="pt-btn" onclick="closeAddModal()">Cancel</button>
+                    <button class="pt-btn pt-btn-primary" onclick="submitAddHolding()">Add to Portfolio</button>
                 </div>
             </div>
         </div>
 
-    <!-- ── News + Sentiment Section ─────────────────────── -->
-    <section id="news-section">
+        <script>
+            function switchTab(tabId, btn) {
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+                btn.classList.add('active');
+            }
+        </script>
 
-        <!-- Signal banner -->
-        <div class="signal-banner NEUTRAL" id="signal-banner">
-            <div>
-                <div class="signal-label NEUTRAL" id="signal-label">
-                    <span class="signal-arrow" id="signal-arrow">→</span>
-                    <span id="signal-text">NEUTRAL</span>
-                </div>
-                <div class="signal-meta" id="signal-meta">Analysing headlines…</div>
-            </div>
-            <div style="min-width:180px;">
-                <div
-                    style="font-family:var(--mono);font-size:.68rem;color:var(--text-faint);margin-bottom:6px;letter-spacing:.08em;">
-                    BULLISH SENTIMENT</div>
-                <div class="sentiment-meter">
-                    <div class="sentiment-fill NEUTRAL" id="sentiment-fill" style="width:50%"></div>
-                </div>
-                <div style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted);margin-top:4px;"
-                    id="sentiment-pct">50%</div>
-            </div>
-        </div>
-
-        <!-- Breakdown grid -->
-        <div class="breakdown-grid">
-            <div class="breakdown-card bullish">
-                <div class="breakdown-number" id="bd-bullish">0</div>
-                <div class="breakdown-tag">↑ Bullish</div>
-            </div>
-            <div class="breakdown-card bearish">
-                <div class="breakdown-number" id="bd-bearish">0</div>
-                <div class="breakdown-tag">↓ Bearish</div>
-            </div>
-            <div class="breakdown-card neutral">
-                <div class="breakdown-number" id="bd-neutral">0</div>
-                <div class="breakdown-tag">→ Neutral</div>
-            </div>
-        </div>
-
-        <!-- Headlines list -->
-        <div class="news-list">
-            <div class="news-section-title">Latest Headlines</div>
-            <div id="headlines-container">
-                <!-- Skeleton loaders shown while fetching -->
-                <div class="news-skeleton"></div>
-                <div class="news-skeleton"></div>
-                <div class="news-skeleton"></div>
-            </div>
-        </div>
-
-    </section>
     </main>
 
     <script>
@@ -2227,6 +2750,8 @@
         }
 
     </script>
+
+    <script src="portfolio.js"></script>
 </body>
 
 </html>
