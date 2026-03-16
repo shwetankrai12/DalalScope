@@ -1,4 +1,5 @@
 # DalalScope 📈
+https://dalalscope.onrender.com
 
 A Python-based stock market data tool for the Indian (NSE) and US markets — available as both a **CLI tool** and a **web application** with a REST API.
 
