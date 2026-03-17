@@ -1,10 +1,16 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import date as DateType
 import json
+import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from supabase import create_client
 from resolver import resolve_ticker
 from fetcher import fetch_ohlcv, fetch_news
 
@@ -19,20 +25,59 @@ app.add_middleware(
 )
 
 
-# ── Pydantic models for Portfolio ─────────────────────────────────────────────
+# ── Supabase admin client ─────────────────────────────────────────────────────
+
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+supabase_admin = None
+if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+    supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+# ── JWT Auth dependency ────────────────────────────────────────────────────────
+
+async def get_current_user(request: Request) -> str:
+    """Extracts and validates the Supabase JWT from Authorization header."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing auth token")
+
+    token = auth_header.replace("Bearer ", "")
+    if not supabase_admin:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+
+    try:
+        user_response = supabase_admin.auth.get_user(token)
+        if not user_response or not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_response.user.id
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
+
+
+# ── Pydantic models ───────────────────────────────────────────────────────────
 
 class Holding(BaseModel):
-    ticker: str           # e.g. "TCS.NS"
-    company_name: str     # e.g. "Tata Consultancy Services"
-    qty: float            # number of shares
-    avg_buy_price: float  # average purchase price in ₹
+    ticker: str
+    company_name: str
+    qty: float
+    avg_buy_price: float
 
 
 class RefreshRequest(BaseModel):
-    tickers: List[str]    # list of tickers to refresh prices for
+    tickers: List[str]
 
 
-# ── Existing endpoints ─────────────────────────────────────────────────────────
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[DateType] = None
+    city: Optional[str] = None
+    risk_appetite: Optional[str] = None
+
+
+# ── Stock endpoints ────────────────────────────────────────────────────────────
 
 @app.get("/health")
 def health():
@@ -119,19 +164,40 @@ async def get_stock_news(ticker: str):
     return data
 
 
+# ── Holdings endpoints ────────────────────────────────────────────────────────
+
+@app.get("/api/holdings")
+async def get_holdings(user_id: str = Depends(get_current_user)):
+    result = supabase_admin.table("holdings").select("*").eq("user_id", user_id).execute()
+    return result.data or []
+
+
+@app.post("/api/holdings")
+async def add_holding(holding: Holding, user_id: str = Depends(get_current_user)):
+    data = holding.model_dump()
+    data["user_id"] = user_id
+    result = supabase_admin.table("holdings").insert(data).execute()
+    return result.data[0] if result.data else {}
+
+
+@app.delete("/api/holdings/{ticker}")
+async def delete_holding(ticker: str, user_id: str = Depends(get_current_user)):
+    supabase_admin.table("holdings").delete().eq("user_id", user_id).eq("ticker", ticker).execute()
+    return {"ok": True}
+
+
+@app.patch("/api/holdings/{ticker}")
+async def update_holding(ticker: str, holding: Holding, user_id: str = Depends(get_current_user)):
+    data = {"qty": holding.qty, "avg_buy_price": holding.avg_buy_price}
+    result = supabase_admin.table("holdings").update(data).eq("user_id", user_id).eq("ticker", ticker).execute()
+    return result.data[0] if result.data else {}
+
+
 # ── Portfolio endpoints ────────────────────────────────────────────────────────
 
 @app.post("/api/portfolio/prices")
 async def get_portfolio_prices(req: RefreshRequest):
-    """
-    Batch-fetch latest close prices for a list of tickers.
-    Called by the frontend to refresh portfolio P&L.
-
-    Request body:  { "tickers": ["TCS.NS", "RELIANCE.NS", "INFY.NS"] }
-    Response:      { "TCS.NS": 3821.50, "RELIANCE.NS": 2915.75, ... }
-    Tickers that fail (delisted, bad symbol) return null so the frontend
-    can show a warning instead of crashing.
-    """
+    """Batch-fetch latest close prices for a list of tickers."""
     results = {}
     for raw in req.tickers:
         ticker = raw.upper()
@@ -150,12 +216,7 @@ async def get_portfolio_prices(req: RefreshRequest):
 
 @app.get("/api/portfolio/quote/{ticker}")
 async def get_single_quote(ticker: str):
-    """
-    Lightweight quote for a single ticker — used when user adds a new
-    holding to auto-fill the current price field.
-
-    Response: { "ticker": "TCS.NS", "close": 3821.50, "date": "2025-03-14" }
-    """
+    """Lightweight quote for a single ticker."""
     ticker = ticker.upper()
     if not ticker.endswith(".NS"):
         ticker = f"{ticker}.NS"
@@ -175,10 +236,60 @@ async def get_single_quote(ticker: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── Profile endpoints ─────────────────────────────────────────────────────────
+
+@app.get("/api/profile")
+async def get_profile(user_id: str = Depends(get_current_user)):
+    """Returns the authenticated user's profile."""
+    if not supabase_admin:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    try:
+        result = (
+            supabase_admin.table("profiles")
+            .select("*")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        return result.data or {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/api/profile")
+async def update_profile(
+    profile: ProfileUpdate,
+    user_id: str = Depends(get_current_user)
+):
+    """Updates profile fields for the authenticated user."""
+    if not supabase_admin:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+
+    data = {k: v for k, v in profile.model_dump().items() if v is not None}
+    if not data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    try:
+        # Convert date to string for Supabase
+        if "date_of_birth" in data and data["date_of_birth"]:
+            data["date_of_birth"] = str(data["date_of_birth"])
+
+        result = (
+            supabase_admin.table("profiles")
+            .update(data)
+            .eq("id", user_id)
+            .execute()
+        )
+        return result.data[0] if result.data else {}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Static files & startup ────────────────────────────────────────────────────
+
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    import os
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("api:app", host="0.0.0.0", port=port)

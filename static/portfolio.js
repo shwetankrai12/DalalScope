@@ -4,8 +4,6 @@
  * No external dependencies — uses the same CSS variables as index.html.
  */
 
-const STORAGE_KEY = 'dalalscope_portfolio_v1';
-
 // ── State ─────────────────────────────────────────────────────────────────────
 
 /** @type {{ ticker: string, companyName: string, qty: number, avgBuyPrice: number }[]} */
@@ -16,17 +14,33 @@ let livePrices = {};
 
 let isRefreshing = false;
 
-// ── localStorage helpers ───────────────────────────────────────────────────────
+// ── API Authentication ─────────────────────────────────────────────────────────
 
-function saveHoldings() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
+async function getAuthToken() {
+    const { data: { session } } = await window.supabase.auth.getSession();
+    return session?.access_token || null;
 }
 
-function loadHoldings() {
+// ── State Management ──────────────────────────────────────────────────────────
+
+async function loadHoldings() {
+    const token = await getAuthToken();
+    if (!token) { holdings = []; return; }
+    
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        holdings = raw ? JSON.parse(raw) : [];
-    } catch {
+        const res = await fetch('/api/holdings', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        holdings = res.ok ? await res.json() : [];
+        // normalize field names from snake_case to camelCase for the frontend
+        holdings = holdings.map(h => ({
+            ticker: h.ticker,
+            companyName: h.company_name,
+            qty: h.qty,
+            avgBuyPrice: h.avg_buy_price
+        }));
+    } catch (err) {
+        console.error("Failed to load holdings:", err);
         holdings = [];
     }
 }
@@ -232,43 +246,78 @@ async function submitAddHolding() {
 
     const ticker = rawTicker.endsWith('.NS') ? rawTicker : `${rawTicker}.NS`;
 
+    const token = await getAuthToken();
+    if (!token) return (errEl.textContent = 'You must be logged in to add holdings');
+
     // Check for duplicate
     const existingIdx = holdings.findIndex(h => h.ticker === ticker);
-    if (existingIdx >= 0) {
-        // Average down / up: weighted average
-        const existing = holdings[existingIdx];
-        const totalQty = existing.qty + qty;
-        const newAvg = ((existing.qty * existing.avgBuyPrice) + (qty * avgBuyPrice)) / totalQty;
-        holdings[existingIdx] = { ...existing, qty: totalQty, avgBuyPrice: newAvg };
-        showPortfolioToast(`Updated ${ticker} — averaged to ₹${newAvg.toFixed(2)}`, 'success');
-    } else {
-        holdings.push({ ticker, companyName, qty, avgBuyPrice });
-        showPortfolioToast(`Added ${ticker} to portfolio`, 'success');
-    }
-
-    saveHoldings();
-    closeAddModal();
-    renderPortfolioTable();
-    renderSummaryBar();
-
-    // Immediately fetch live price for the new holding
     try {
-        const quote = await fetchQuoteForTicker(ticker);
-        livePrices[ticker] = quote.close;
+        if (existingIdx >= 0) {
+            // Average down / up: weighted average
+            const existing = holdings[existingIdx];
+            const totalQty = existing.qty + qty;
+            const newAvg = ((existing.qty * existing.avgBuyPrice) + (qty * avgBuyPrice)) / totalQty;
+            
+            const res = await fetch(`/api/holdings/${encodeURIComponent(ticker)}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qty: totalQty, avg_buy_price: newAvg, ticker, company_name: companyName })
+            });
+            if (!res.ok) throw new Error('Failed to update holding');
+            
+            holdings[existingIdx] = { ...existing, qty: totalQty, avgBuyPrice: newAvg };
+            showPortfolioToast(`Updated ${ticker} — averaged to ₹${newAvg.toFixed(2)}`, 'success');
+        } else {
+            const res = await fetch('/api/holdings', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, company_name: companyName, qty, avg_buy_price: avgBuyPrice })
+            });
+            if (!res.ok) throw new Error('Failed to add holding');
+            
+            holdings.push({ ticker, companyName, qty, avgBuyPrice });
+            showPortfolioToast(`Added ${ticker} to portfolio`, 'success');
+        }
+
+        closeAddModal();
         renderPortfolioTable();
         renderSummaryBar();
-    } catch { /* silent — user can refresh manually */ }
+
+        // Immediately fetch live price for the new holding
+        try {
+            const quote = await fetchQuoteForTicker(ticker);
+            livePrices[ticker] = quote.close;
+            renderPortfolioTable();
+            renderSummaryBar();
+        } catch { /* silent — user can refresh manually */ }
+    } catch (err) {
+        errEl.textContent = err.message;
+    }
 }
 
 // ── Delete holding ────────────────────────────────────────────────────────────
 
-function deleteHolding(idx) {
+async function deleteHolding(idx) {
     const ticker = holdings[idx]?.ticker;
-    holdings.splice(idx, 1);
-    saveHoldings();
-    renderPortfolioTable();
-    renderSummaryBar();
-    if (ticker) showPortfolioToast(`Removed ${ticker}`, 'error');
+    if (!ticker) return;
+    
+    const token = await getAuthToken();
+    if (!token) return showPortfolioToast("Not authenticated", "error");
+
+    try {
+        const res = await fetch(`/api/holdings/${encodeURIComponent(ticker)}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to delete');
+        
+        holdings.splice(idx, 1);
+        renderPortfolioTable();
+        renderSummaryBar();
+        showPortfolioToast(`Removed ${ticker}`, 'error');
+    } catch (err) {
+        showPortfolioToast('Failed to delete holding', 'error');
+    }
 }
 
 // ── Toast (portfolio-scoped, reuses main toast container) ─────────────────────
@@ -308,8 +357,8 @@ function updateRefreshBtn(loading) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-function initPortfolio() {
-    loadHoldings();
+async function initPortfolio() {
+    await loadHoldings();
     renderPortfolioTable();
     renderSummaryBar();
 
@@ -322,9 +371,27 @@ function initPortfolio() {
     });
 }
 
-// Auto-init when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPortfolio);
-} else {
-    initPortfolio();
-}
+// ── Auth integration ────────────────────────────────────────────────────────
+
+// Wait for supabase to be ready on window
+const checkSupabaseAndInit = setInterval(() => {
+    if (window.supabase) {
+        clearInterval(checkSupabaseAndInit);
+        
+        window.supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                initPortfolio();
+            } else {
+                holdings = [];
+                livePrices = {};
+                renderPortfolioTable();
+                renderSummaryBar();
+            }
+        });
+
+        // initial check
+        window.supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) initPortfolio();
+        });
+    }
+}, 50);

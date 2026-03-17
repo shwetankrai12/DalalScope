@@ -1683,7 +1683,307 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ── Auth Styles ───────────────────────────────────────── */
+        .auth-hidden {
+            display: none !important;
+        }
+
+        .user-display {
+            font-family: var(--mono);
+            font-size: .75rem;
+            color: var(--accent);
+            padding: 4px 10px;
+            background: var(--accent-dim);
+            border: 1px solid rgba(0, 200, 150, .25);
+            border-radius: 4px;
+        }
+
+        #auth-btn {
+            font-family: var(--mono);
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            transition: all .2s;
+        }
+
+        #auth-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Auth Gate (portfolio locked screen) */
+        .pt-auth-gate {
+            text-align: center;
+            padding: 80px 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .pt-auth-gate-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: .6;
+        }
+
+        .pt-auth-gate-title {
+            font-family: var(--mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .pt-auth-gate-sub {
+            font-family: var(--sans);
+            font-size: .85rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .pt-auth-gate-btn {
+            font-family: var(--mono);
+            font-size: .85rem;
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            transition: background .2s;
+        }
+
+        .pt-auth-gate-btn:hover {
+            background: #00e5ac;
+        }
+
+        /* Auth Modal */
+        .auth-modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            z-index: 1001;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .auth-modal-title {
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+            letter-spacing: .04em;
+            text-align: center;
+        }
+
+        .auth-google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .auth-google-btn:hover {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .auth-divider {
+            text-align: center;
+            font-family: var(--mono);
+            font-size: .7rem;
+            color: var(--text-faint);
+            position: relative;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .auth-divider::before { left: 0; }
+        .auth-divider::after { right: 0; }
+
+        .auth-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .auth-field label {
+            font-family: var(--sans);
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+        }
+
+        .auth-field input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: .875rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .auth-field input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
+
+        .auth-error {
+            font-family: var(--mono);
+            font-size: .75rem;
+            color: var(--red);
+            min-height: 1em;
+            text-align: center;
+        }
+
+        .auth-submit-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            background: var(--accent);
+            color: var(--bg);
+            font-family: var(--mono);
+            font-size: .85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        .auth-submit-btn:hover {
+            background: #00e5ac;
+        }
+
+        .auth-submit-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .auth-switch-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: var(--sans);
+            font-size: .78rem;
+            cursor: pointer;
+            text-align: center;
+            transition: color .2s;
+        }
+
+        .auth-switch-btn:hover {
+            color: var(--accent);
+        }
+
+        /* Step Indicator */
+        .auth-step-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .auth-step {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: 2px solid var(--border);
+            color: var(--text-faint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--mono);
+            font-size: .85rem;
+            font-weight: 700;
+            transition: all .3s;
+        }
+
+        .auth-step.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-dim);
+        }
+
+        .auth-step.done {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--bg);
+        }
+
+        .auth-step-line {
+            width: 40px;
+            height: 2px;
+            background: var(--border);
+            transition: all .3s;
+        }
+
+        .auth-step-line.active {
+            background: var(--accent);
+        }
+
+        .auth-step-label {
+            text-align: center;
+            font-family: var(--sans);
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-top: -12px;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
     </style>
+
+    <script>
+        window.SUPABASE_URL = 'https://pzzulxbbqgaywxunpnav.supabase.co';
+        window.SUPABASE_ANON = 'sb_publishable_c7hjLywVyZrRH_biUvy1WQ_S6PQcXhr';
+    </script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="portfolio.js"></script>
 </head>
 
 <body class="theme-terminal">
@@ -1703,6 +2003,12 @@
                 title="Toggle Theme">
                 <span id="theme-icon">🔆</span>
             </button>
+
+            <div id="user-display" class="user-display auth-hidden">
+                <span id="user-email"></span>
+            </div>
+            <button id="auth-btn" onclick="window.authShowModal()">Sign In</button>
+
             <div class="stat-card" style="text-align: right;">
                 <div class="stat-label">Live IST</div>
                 <div class="stat-value mono" id="ist-clock" style="font-size: 1rem; margin-top: -2px;">--:--:--</div>
@@ -1847,65 +2153,78 @@
         <!-- Portfolio Tab -->
         <div id="tab-portfolio" class="tab-panel">
 
-            <!-- Summary Bar -->
-            <div class="pt-summary-bar">
-                <div class="pt-stat">
-                    <div class="pt-stat-label">Invested</div>
-                    <div class="pt-stat-value" id="pt-total-invested">₹0.00</div>
-                    <div class="pt-stat-sub" id="pt-holding-count">0 holdings</div>
-                </div>
-                <div class="pt-stat">
-                    <div class="pt-stat-label">Current Value</div>
-                    <div class="pt-stat-value" id="pt-total-current">—</div>
-                </div>
-                <div class="pt-stat">
-                    <div class="pt-stat-label">Total P&L</div>
-                    <div class="pt-stat-value" id="pt-total-pnl">—</div>
-                </div>
-                <div class="pt-stat">
-                    <div class="pt-stat-label">Return</div>
-                    <div class="pt-stat-value" id="pt-total-pct">—</div>
-                </div>
+            <!-- Auth gate (shown when logged out) -->
+            <div id="pt-auth-gate" class="pt-auth-gate">
+                <div class="pt-auth-gate-icon">🔒</div>
+                <div class="pt-auth-gate-title">Sign in to view your portfolio</div>
+                <div class="pt-auth-gate-sub">Your holdings are saved securely to your account.</div>
+                <button class="pt-auth-gate-btn" onclick="window.authShowModal()">Sign In / Sign
+                    Up</button>
             </div>
 
-            <!-- Holdings Table Card -->
-            <div class="pt-table-card">
-                <div class="pt-table-header">
-                    <span class="pt-table-title">HOLDINGS</span>
-                    <div class="pt-table-actions">
-                        <button class="pt-btn" id="pt-refresh-btn" onclick="refreshPrices()">↻ Refresh Prices</button>
-                        <button class="pt-btn pt-btn-primary" onclick="openAddModal()">+ Add Holding</button>
+            <!-- Main content (shown when logged in) -->
+            <div id="pt-main-content">
+                <!-- Summary Bar -->
+                <div class="pt-summary-bar">
+                    <div class="pt-stat">
+                        <div class="pt-stat-label">Invested</div>
+                        <div class="pt-stat-value" id="pt-total-invested">₹0.00</div>
+                        <div class="pt-stat-sub" id="pt-holding-count">0 holdings</div>
+                    </div>
+                    <div class="pt-stat">
+                        <div class="pt-stat-label">Current Value</div>
+                        <div class="pt-stat-value" id="pt-total-current">—</div>
+                    </div>
+                    <div class="pt-stat">
+                        <div class="pt-stat-label">Total P&L</div>
+                        <div class="pt-stat-value" id="pt-total-pnl">—</div>
+                    </div>
+                    <div class="pt-stat">
+                        <div class="pt-stat-label">Return</div>
+                        <div class="pt-stat-value" id="pt-total-pct">—</div>
                     </div>
                 </div>
 
-                <!-- Empty State -->
-                <div class="pt-empty" id="pt-empty">
-                    <div class="pt-empty-icon">💼</div>
-                    <p>No holdings yet.</p>
-                    <p style="margin-top:6px;font-size:.75rem;opacity:.7;">Click <strong>+ Add Holding</strong> to get
-                        started.</p>
+                <!-- Holdings Table Card -->
+                <div class="pt-table-card">
+                    <div class="pt-table-header">
+                        <span class="pt-table-title">HOLDINGS</span>
+                        <div class="pt-table-actions">
+                            <button class="pt-btn" id="pt-refresh-btn" onclick="refreshPrices()">↻ Refresh
+                                Prices</button>
+                            <button class="pt-btn pt-btn-primary" onclick="openAddModal()">+ Add Holding</button>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="pt-empty" id="pt-empty">
+                        <div class="pt-empty-icon">💼</div>
+                        <p>No holdings yet.</p>
+                        <p style="margin-top:6px;font-size:.75rem;opacity:.7;">Click <strong>+ Add Holding</strong> to
+                            get started.</p>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="pt-table-wrap pt-hidden" id="pt-table-wrap">
+                        <table class="pt-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left">STOCK</th>
+                                    <th>QTY</th>
+                                    <th>AVG BUY</th>
+                                    <th>LTP</th>
+                                    <th>INVESTED</th>
+                                    <th>CURRENT</th>
+                                    <th>P&L</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="pt-tbody"></tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <!-- Table -->
-                <div class="pt-table-wrap pt-hidden" id="pt-table-wrap">
-                    <table class="pt-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align:left">STOCK</th>
-                                <th>QTY</th>
-                                <th>AVG BUY</th>
-                                <th>LTP</th>
-                                <th>INVESTED</th>
-                                <th>CURRENT</th>
-                                <th>P&L</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="pt-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-
+            </div><!-- end pt-main-content -->
         </div><!-- end tab-portfolio -->
 
 
@@ -2751,7 +3070,103 @@
 
     </script>
 
+    <script type="module" src="auth.js"></script>
     <script src="portfolio.js"></script>
+
+    <!-- Auth Modal (3-panel) -->
+    <div class="auth-modal-backdrop" id="auth-modal">
+        <div class="auth-modal-box" onclick="event.stopPropagation()">
+
+            <!-- Panel 1: Login -->
+            <div id="auth-panel-login">
+                <div class="auth-modal-title">Sign In</div>
+                <div class="auth-field">
+                    <label for="auth-email">Email</label>
+                    <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label for="auth-password">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                <div class="auth-error" id="auth-error"></div>
+                <button class="auth-submit-btn" id="auth-login-btn">Sign In</button>
+                <button class="auth-switch-btn"
+                    onclick="window.authSetMode('signup')">
+                    Don't have an account? Sign up
+                </button>
+            </div>
+
+            <!-- Panel 2: Sign Up (Step 1 of 2) -->
+            <div id="auth-panel-signup" style="display:none">
+                <div class="auth-step-row">
+                    <span class="auth-step active">1</span>
+                    <span class="auth-step-line"></span>
+                    <span class="auth-step">2</span>
+                </div>
+                <div class="auth-step-label">Step 1 of 2 — Create account</div>
+                <div class="auth-modal-title" style="margin-top:4px">Sign Up</div>
+                <div class="auth-field">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+                </div>
+                <div class="auth-field">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" placeholder="Min 6 characters" autocomplete="new-password">
+                </div>
+                <div class="auth-error" id="signup-error"></div>
+                <button class="auth-submit-btn" id="auth-signup-btn">Create Account</button>
+                <button class="auth-switch-btn"
+                    onclick="window.authSetMode('login')">
+                    Already have an account? Sign in
+                </button>
+            </div>
+
+            <!-- Panel 3: Profile (Step 2 of 2) -->
+            <div id="auth-panel-profile" style="display:none">
+                <div class="auth-step-row">
+                    <span class="auth-step done">✓</span>
+                    <span class="auth-step-line active"></span>
+                    <span class="auth-step active">2</span>
+                </div>
+                <div class="auth-step-label">Step 2 of 2 — Tell us about yourself</div>
+                <div class="auth-modal-title" style="margin-top:4px">Complete Your Profile</div>
+                <div class="auth-field">
+                    <label for="profile-name">Full Name *</label>
+                    <input type="text" id="profile-name" placeholder="e.g. Rahul Sharma" autocomplete="name">
+                </div>
+                <div class="auth-field">
+                    <label for="profile-phone">Phone <span style="opacity:.5">(optional)</span></label>
+                    <input type="tel" id="profile-phone" placeholder="e.g. 9876543210" autocomplete="tel">
+                </div>
+                <div class="auth-field">
+                    <label for="profile-dob">Date of Birth <span style="opacity:.5">(optional)</span></label>
+                    <input type="date" id="profile-dob">
+                </div>
+                <div class="auth-field">
+                    <label for="profile-city">City <span style="opacity:.5">(optional)</span></label>
+                    <input type="text" id="profile-city" placeholder="e.g. Mumbai">
+                </div>
+                <div class="auth-field">
+                    <label for="profile-risk">Risk Appetite <span style="opacity:.5">(optional)</span></label>
+                    <select id="profile-risk" style="background:var(--input-bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:.875rem;outline:none;">
+                        <option value="">— Select —</option>
+                        <option value="Conservative">Conservative</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Aggressive">Aggressive</option>
+                    </select>
+                </div>
+                <div class="auth-error" id="profile-error"></div>
+                <button class="auth-submit-btn" id="auth-profile-btn"
+                    onclick="window.authProfileSubmit()">Complete Setup →</button>
+                <button class="auth-switch-btn"
+                    onclick="import('./auth.js').then(m=>{document.getElementById('auth-modal').style.display='none'})">
+                    Skip for now
+                </button>
+            </div>
+
+        </div>
+    </div>
+
 </body>
 
 </html>
