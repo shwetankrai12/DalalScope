@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DalalScope</title>
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -1981,6 +1983,154 @@
             margin-bottom: 24px;
             font-weight: 500;
         }
+
+        /* ── Hero Section ─────────────────────────────────────── */
+        .hero-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .hero-index-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .hero-index-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .hero-index-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .hero-index-card.pos::before {
+            background: var(--accent);
+        }
+
+        .hero-index-card.neg::before {
+            background: var(--red);
+        }
+
+        .hero-index-card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .hero-index-name {
+            font-family: var(--sans);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--text-weak);
+            text-transform: uppercase;
+        }
+
+        .hero-index-val {
+            font-family: var(--mono);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        .hero-index-chg {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .hero-index-chg.pos {
+            color: var(--accent);
+        }
+
+        .hero-index-chg.neg {
+            color: var(--red);
+        }
+
+        .hero-index-chg.neutral {
+            color: var(--text-weak);
+        }
+
+        .hero-index-val.skeleton-pulse,
+        .hero-index-chg.skeleton-pulse {
+            background: var(--surface2);
+            border-radius: 4px;
+            color: transparent;
+            animation: shimmer 1.4s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.4;
+            }
+        }
+
+        .quick-access-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-access-label {
+            font-family: var(--sans);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .quick-chip {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-weak);
+            cursor: pointer;
+            transition: all 0.18s;
+            letter-spacing: 0.04em;
+        }
+
+        .quick-chip:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
+        @media (max-width: 768px) {
+            .hero-index-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 
     <script>
@@ -2032,6 +2182,43 @@
 
         <!-- Market Data Tab -->
         <div id="tab-market" class="tab-panel active">
+
+            <!-- Hero Section: Index Stats + Quick Access -->
+            <section class="hero-section">
+                <div class="hero-index-row">
+                    <div class="hero-index-card" id="hero-nifty">
+                        <div class="hero-index-name">Nifty 50</div>
+                        <div class="hero-index-val skeleton-pulse" id="hero-nifty-val">00,000</div>
+                        <div class="hero-index-chg neutral skeleton-pulse" id="hero-nifty-chg">+0.00%</div>
+                    </div>
+                    <div class="hero-index-card" id="hero-sensex">
+                        <div class="hero-index-name">Sensex</div>
+                        <div class="hero-index-val skeleton-pulse" id="hero-sensex-val">00,000</div>
+                        <div class="hero-index-chg neutral skeleton-pulse" id="hero-sensex-chg">+0.00%</div>
+                    </div>
+                    <div class="hero-index-card" id="hero-banknifty">
+                        <div class="hero-index-name">Bank Nifty</div>
+                        <div class="hero-index-val skeleton-pulse" id="hero-banknifty-val">00,000</div>
+                        <div class="hero-index-chg neutral skeleton-pulse" id="hero-banknifty-chg">+0.00%</div>
+                    </div>
+                    <div class="hero-index-card" id="hero-vix">
+                        <div class="hero-index-name">India VIX</div>
+                        <div class="hero-index-val skeleton-pulse" id="hero-vix-val">00.00</div>
+                        <div class="hero-index-chg neutral skeleton-pulse" id="hero-vix-chg">+0.00%</div>
+                    </div>
+                </div>
+                <div class="quick-access-row">
+                    <span class="quick-access-label">Quick:</span>
+                    <button class="quick-chip" onclick="quickSearch('RELIANCE.NS')">RELIANCE</button>
+                    <button class="quick-chip" onclick="quickSearch('TCS.NS')">TCS</button>
+                    <button class="quick-chip" onclick="quickSearch('HDFCBANK.NS')">HDFCBANK</button>
+                    <button class="quick-chip" onclick="quickSearch('INFY.NS')">INFY</button>
+                    <button class="quick-chip" onclick="quickSearch('WIPRO.NS')">WIPRO</button>
+                    <button class="quick-chip" onclick="quickSearch('BAJFINANCE.NS')">BAJFINANCE</button>
+                    <button class="quick-chip" onclick="quickSearch('ITC.NS')">ITC</button>
+                </div>
+            </section>
+
             <!-- Search Panel -->
             <section class="stitch-card search-panel">
                 <form id="search-form" class="search-form">
@@ -2480,8 +2667,8 @@
 
                 // Run the vanish animation concurrently
                 await vanishAndSubmit(queryInput, document.getElementById('particle-canvas'), () => {
-                    queryInput.value = '';
-                    showPlaceholder();
+                    // queryInput.value = ''; // FIX: Don't clear, so select() can highlight the ticker
+                    // showPlaceholder();
                     checkInputLengthForButton();
                 });
 
@@ -2547,10 +2734,13 @@
                 let ticker = rawInput.toUpperCase();
                 let companyName = null;
 
-                // Auto append .NS
-                if (!ticker.endsWith('.NS') && !ticker.includes(' ')) {
+                // Smart Auto append .NS
+                const isNseTicker = /^[A-Z0-9]+$/.test(ticker);
+                if (isNseTicker && !ticker.endsWith('.NS')) {
                     ticker += '.NS';
                     document.getElementById('query').value = ticker;
+                    const ph = document.getElementById('rotating-placeholder');
+                    if (ph) ph.style.display = 'none';
                 }
 
                 // Resolve if it looks like a company name
@@ -2571,12 +2761,22 @@
 
                 let isHistory = (mode === 'history');
                 let dataArray = [];
+                let intradayArray = [];
 
                 if (!isHistory) {
+                    // Fetch latest single row for summary cards
                     const res = await fetch(`/api/stock/latest?ticker=${encodeURIComponent(ticker)}`);
                     const json = await res.json();
                     if (!res.ok) throw new Error(json.detail || json.error || 'Failed to fetch latest data.');
                     dataArray = [{ ...json, Date: json.date, Open: json.open, High: json.high, Low: json.low, Close: json.close, Volume: json.volume }];
+
+                    // Fetch intraday 5m candles for Price History chart
+                    try {
+                        const intradayRes = await fetch(`/api/stock/intraday?ticker=${encodeURIComponent(ticker)}&interval=5m&period=1d`);
+                        if (intradayRes.ok) {
+                            intradayArray = await intradayRes.json();
+                        }
+                    } catch (_) { /* fallback to single point */ }
                 } else {
                     if (!start || !end) {
                         showToast('Start and End dates are required for history.', 'warning');
@@ -2630,13 +2830,15 @@
                     document.getElementById('btn-export').disabled = true;
                 }
 
-                // Draw Chart
-                drawChart(ticker, dataArray);
+                // Draw Chart — use intraday candles in latest mode for a rich price line
+                const chartData = (!isHistory && intradayArray.length > 0) ? intradayArray : dataArray;
+                drawChart(ticker, chartData, !isHistory && intradayArray.length > 0);
 
                 const now = new Date();
                 document.getElementById('last-updated').textContent = `Local time: ${now.toLocaleTimeString('en-US')}`;
 
                 if (!isHistory || dataArray.length > 0) showToast('Data fetched successfully', 'success');
+                setTimeout(() => { if (queryInput) queryInput.focus(); }, 100);
 
             } catch (err) {
                 if (err.message !== 'Dates required') showToast(err.message, 'error');
@@ -2742,7 +2944,7 @@
             });
         }
 
-        function drawChart(ticker, dataArray) {
+        function drawChart(ticker, dataArray, isIntraday = false) {
             if (!dataArray || dataArray.length === 0) return;
 
             const chartCanvas = document.getElementById('price-chart');
@@ -2759,6 +2961,8 @@
             const isUp = closes[closes.length - 1] >= closes[0];
             const color = isUp ? '#00c896' : '#f43f5e';
             const fill = isUp ? 'rgba(0,200,150,0.08)' : 'rgba(244,63,94,0.08)';
+            // intraday: hide individual point dots for clean line, show on hover only
+            const ptRadius = isIntraday ? 0 : 5;
 
             priceChart = new Chart(ctx, {
                 type: 'line',
@@ -2770,10 +2974,16 @@
                         borderColor: color,
                         backgroundColor: fill,
                         borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 4,
+                        pointRadius: ptRadius,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: color,
+                        pointBorderWidth: 2,
+                        pointHitRadius: 15,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: color,
+                        pointHoverBorderColor: '#ffffff',
                         fill: true,
-                        tension: 0.1
+                        tension: 0.2
                     }]
                 },
                 options: {
@@ -2799,7 +3009,14 @@
                     scales: {
                         x: {
                             type: 'time',
-                            time: { tooltipFormat: 'dd MMM yyyy' },
+                            time: {
+                                tooltipFormat: isIntraday ? 'HH:mm' : 'dd MMM yyyy',
+                                displayFormats: {
+                                    minute: 'HH:mm',
+                                    hour: 'HH:mm',
+                                    day: 'dd MMM'
+                                }
+                            },
                             grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
                             ticks: { color: '#5b7aa0', maxRotation: 0 }
                         },
@@ -2960,6 +3177,10 @@
                             canvasEl.style.opacity = '0';
                             inputEl.style.color = '';
                             inputEl.disabled = false;
+                            setTimeout(() => {
+                                inputEl.focus();
+                                inputEl.select(); // Highlight for easy re-typing
+                            }, 150);
                             resolve();
                         }
                     });
@@ -3079,6 +3300,68 @@
             if (section) section.classList.remove('visible');
         }
 
+        /* ── Hero Index Cards ──────────────────────────────────── */
+        async function fetchHeroIndices() {
+            const indices = [
+                { id: 'nifty', ticker: '^NSEI', name: 'hero-nifty' },
+                { id: 'sensex', ticker: '^BSESN', name: 'hero-sensex' },
+                { id: 'banknifty', ticker: '^NSEBANK', name: 'hero-banknifty' },
+                { id: 'vix', ticker: '^INDIAVIX', name: 'hero-vix' },
+            ];
+
+            for (const idx of indices) {
+                try {
+                    const res = await fetch(`/api/stock/latest?ticker=${encodeURIComponent(idx.ticker)}`);
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const close = data.close ?? data.price ?? null;
+                    const prev = data.prev_close ?? null;
+                    const valEl = document.getElementById(`${idx.name}-val`);
+                    const chgEl = document.getElementById(`${idx.name}-chg`);
+                    const card = document.getElementById(`hero-${idx.id}`);
+                    if (!valEl || !chgEl || close == null) continue;
+
+                    valEl.classList.remove('skeleton-pulse');
+                    chgEl.classList.remove('skeleton-pulse');
+
+                    valEl.textContent = Number(close).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+                    if (prev != null) {
+                        const pct = ((close - prev) / prev * 100).toFixed(2);
+                        const diff = (close - prev).toFixed(2);
+                        const isPos = pct >= 0;
+                        chgEl.textContent = `${isPos ? '▲' : '▼'} ${isPos ? '+' : ''}${pct}% (${isPos ? '+' : ''}${diff})`;
+                        chgEl.className = `hero-index-chg ${isPos ? 'pos' : 'neg'}`;
+                        card.classList.add(isPos ? 'pos' : 'neg');
+                    } else {
+                        chgEl.textContent = '— market closed';
+                        chgEl.className = 'hero-index-chg neutral';
+                    }
+                } catch (e) {
+                    // silently skip failed index
+                }
+            }
+        }
+
+        function quickSearch(ticker) {
+            const input = document.getElementById('query');
+            if (!input) return;
+            input.value = ticker;
+            // hide rotating placeholder
+            const ph = document.getElementById('rotating-placeholder');
+            if (ph) ph.style.display = 'none';
+            // enable fetch btn
+            const btn = document.getElementById('search-btn');
+            if (btn) btn.disabled = false;
+            // auto submit
+            document.getElementById('search-form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+
+        // Fetch hero indices on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchHeroIndices();
+        });
+
     </script>
 
     <script type="module" src="auth.js"></script>
@@ -3089,7 +3372,8 @@
         <div class="auth-modal-box" onclick="event.stopPropagation()">
 
             <!-- Panel 1: Login -->
-            <div id="auth-panel-login">
+            <form id="auth-panel-login" action="#" method="POST"
+                onsubmit="event.preventDefault(); window.authHandleSubmit();">
                 <div class="auth-modal-title">Sign In</div>
                 <div class="auth-field">
                     <label for="auth-email">Email</label>
@@ -3100,14 +3384,15 @@
                     <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
                 </div>
                 <div class="auth-error" id="auth-error"></div>
-                <button class="auth-submit-btn" id="auth-login-btn">Sign In</button>
-                <button class="auth-switch-btn" onclick="window.authSetMode('signup')">
+                <button type="submit" class="auth-submit-btn" id="auth-login-btn">Sign In</button>
+                <button type="button" class="auth-switch-btn" onclick="window.authSetMode('signup')">
                     Don't have an account? Sign up
                 </button>
-            </div>
+            </form>
 
             <!-- Panel 2: Sign Up (Step 1 of 2) -->
-            <div id="auth-panel-signup" style="display:none">
+            <form id="auth-panel-signup" style="display:none" action="#" method="POST"
+                onsubmit="event.preventDefault(); window.authHandleSubmit();">
                 <div class="auth-step-row">
                     <span class="auth-step active">1</span>
                     <span class="auth-step-line"></span>
@@ -3125,11 +3410,11 @@
                         autocomplete="new-password">
                 </div>
                 <div class="auth-error" id="signup-error"></div>
-                <button class="auth-submit-btn" id="auth-signup-btn">Create Account</button>
-                <button class="auth-switch-btn" onclick="window.authSetMode('login')">
+                <button type="submit" class="auth-submit-btn" id="auth-signup-btn">Create Account</button>
+                <button type="button" class="auth-switch-btn" onclick="window.authSetMode('login')">
                     Already have an account? Sign in
                 </button>
-            </div>
+            </form>
 
             <!-- Panel 3: Profile (Step 2 of 2) -->
             <div id="auth-panel-profile" style="display:none">
@@ -3169,8 +3454,7 @@
                 <div class="auth-error" id="profile-error"></div>
                 <button class="auth-submit-btn" id="auth-profile-btn" onclick="window.authProfileSubmit()">Complete
                     Setup →</button>
-                <button class="auth-switch-btn"
-                    onclick="import('./auth.js').then(m=>{document.getElementById('auth-modal').style.display='none'})">
+                <button class="auth-switch-btn" onclick="window.authHideModal()">
                     Skip for now
                 </button>
             </div>

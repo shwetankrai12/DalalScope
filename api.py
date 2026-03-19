@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -79,6 +80,11 @@ class ProfileUpdate(BaseModel):
 
 # ── Stock endpoints ────────────────────────────────────────────────────────────
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -86,10 +92,13 @@ def health():
 
 @app.get("/api/stock/latest")
 async def get_latest(ticker: str):
-    """Fetches the latest trading day OHLCV."""
+    """Fetches the latest trading day OHLCV.
+    Supports NSE stocks (auto-appends .NS) and index tickers like ^NSEI, ^BSESN.
+    """
     try:
         ticker = ticker.upper()
-        if not ticker.endswith(".NS"):
+        # Index tickers start with ^ — skip .NS append
+        if not ticker.startswith("^") and not ticker.endswith(".NS"):
             ticker = f"{ticker}.NS"
 
         data = fetch_ohlcv(ticker, mode="latest")
@@ -97,6 +106,8 @@ async def get_latest(ticker: str):
             raise HTTPException(status_code=404, detail="Data not found for ticker.")
 
         latest = data.iloc[-1]
+        prev_close = float(data.iloc[-2]["Close"]) if len(data) >= 2 else None
+
         return {
             "ticker": ticker,
             "date": latest["Date"],
@@ -104,12 +115,16 @@ async def get_latest(ticker: str):
             "high": float(latest["High"]),
             "low": float(latest["Low"]),
             "close": float(latest["Close"]),
-            "volume": int(latest["Volume"])
+            "volume": int(latest["Volume"]),
+            "prev_close": prev_close,
         }
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = str(e)
+        if "No data available" in error_msg or "not found" in error_msg.lower() or "empty" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 @app.get("/api/stock/history")
@@ -126,6 +141,46 @@ async def get_history(ticker: str, start: str, end: str):
 
         records = json.loads(data.to_json(orient='records'))
         return records
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = str(e).lower()
+        if any(x in error_msg for x in ["no data", "not found", "empty", "symbol may be delisted", "failed to download"]):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stock/intraday")
+async def get_intraday(
+    ticker: str,
+    interval: str = "5m",
+    period: str = "1d"
+):
+    """
+    Fetches intraday OHLCV candles for a ticker.
+
+    Parameters:
+        ticker   — NSE stock symbol (e.g. RELIANCE)
+        interval — candle size: 1m, 2m, 5m, 15m, 30m, 60m  (default: 5m)
+        period   — lookback: 1d, 2d, 5d                     (default: 1d)
+
+    Returns list of { Date, Open, High, Low, Close, Volume }
+    where Date is ISO timestamp string.
+    """
+    try:
+        ticker = ticker.upper()
+        if not ticker.startswith("^") and not ticker.endswith(".NS"):
+            ticker = f"{ticker}.NS"
+
+        data = fetch_ohlcv(ticker, mode="intraday", interval=interval, period=period)
+        if data.empty:
+            raise HTTPException(status_code=404, detail="No intraday data found.")
+
+        records = json.loads(data.to_json(orient="records"))
+        return records
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
@@ -198,7 +253,7 @@ async def update_holding(ticker: str, holding: Holding, user_id: str = Depends(g
 @app.post("/api/portfolio/prices")
 async def get_portfolio_prices(req: RefreshRequest):
     """Batch-fetch latest close prices for a list of tickers."""
-    results = {}
+    results: dict[str, Optional[float]] = {}
     for raw in req.tickers:
         ticker = raw.upper()
         if not ticker.endswith(".NS"):

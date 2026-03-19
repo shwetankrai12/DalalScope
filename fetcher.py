@@ -11,16 +11,23 @@ def fetch_ohlcv(
     ticker: str,
     mode: str = "latest",
     start: Optional[str] = None,
-    end: Optional[str] = None
+    end: Optional[str] = None,
+    interval: str = "1m",
+    period: str = "1d"
 ) -> pd.DataFrame:
     """
     Fetch OHLCV data for a given ticker symbol.
     
     Args:
         ticker: The stock ticker symbol (e.g., "AAPL")
-        mode: Fetch mode - 'latest' for most recent trading day or 'history' for date range
+        mode: Fetch mode - 'latest' | 'history' | 'intraday'
+              'latest'   → last single closing price (1 row)
+              'history'  → date range daily OHLCV
+              'intraday' → intraday candles (default: 1m interval, 1d period)
         start: Start date in YYYY-MM-DD format (required for 'history' mode)
         end: End date in YYYY-MM-DD format (required for 'history' mode)
+        interval: Candle interval for intraday — '1m','2m','5m','15m','30m','60m'
+        period: Lookback period for intraday — '1d','2d','5d'
     
     Returns:
         A pandas DataFrame with columns: Date, Open, High, Low, Close, Volume
@@ -29,8 +36,8 @@ def fetch_ohlcv(
         ValueError: If mode is invalid or required parameters are missing
         Exception: If data cannot be fetched for the ticker
     """
-    if mode not in ["latest", "history"]:
-        raise ValueError(f"Invalid mode '{mode}'. Must be 'latest' or 'history'.")
+    if mode not in ["latest", "history", "intraday"]:
+        raise ValueError(f"Invalid mode '{mode}'. Must be 'latest', 'history', or 'intraday'.")
     
     try:
         # Download data using yfinance
@@ -45,7 +52,45 @@ def fetch_ohlcv(
             
             # Return only the last row
             data = data.tail(1)
-        
+
+        elif mode == "intraday":
+            # Valid intervals: 1m, 2m, 5m, 15m, 30m, 60m
+            # Valid periods for 1m: only last 7 days max (yfinance limitation)
+            valid_intervals = ["1m", "2m", "5m", "15m", "30m", "60m"]
+            if interval not in valid_intervals:
+                raise ValueError(f"Invalid interval '{interval}'. Choose from {valid_intervals}")
+
+            data = yf.download(
+                ticker,
+                period=period,
+                interval=interval,
+                progress=False
+            )
+
+            if data.empty:
+                raise Exception(f"No intraday data available for ticker '{ticker}'")
+
+            # Reset index — intraday data has Datetime as index, not Date
+            data = data.reset_index()
+
+            # Rename Datetime → Date for consistent column naming
+            if "Datetime" in data.columns:
+                data = data.rename(columns={"Datetime": "Date"})
+
+            # Flatten multi-level columns if present
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = [col[0] if col[1] == '' else col[0] for col in data.columns.values]
+
+            # Format timestamp as ISO string for frontend
+            data["Date"] = pd.to_datetime(data["Date"]).dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+            for col in ["Open", "High", "Low", "Close"]:
+                if col in data.columns:
+                    data[col] = data[col].round(2)
+            data["Volume"] = data["Volume"].astype(int)
+
+            return data[["Date", "Open", "High", "Low", "Close", "Volume"]]
+
         elif mode == "history":
             if not start or not end:
                 raise ValueError("For 'history' mode, both 'start' and 'end' dates are required.")

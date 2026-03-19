@@ -254,66 +254,80 @@ async function signOut() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-supabase.auth.onAuthStateChange((_event, session) => {
-    updateAuthUI(session?.user || null);
-});
+if (!window._authLoaded) {
+    window._authLoaded = true;
 
-supabase.auth.getSession().then(({ data: { session } }) => {
-    updateAuthUI(session?.user || null);
-});
+    supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session?.user || null);
+    });
 
-/**
- * Attach submit listeners exactly once.
- * Uses dataset.bound as a guard so re-calling this is always safe.
- */
-function bindAuthListeners() {
-    // Login button
-    const loginBtn = document.getElementById('auth-login-btn');
-    if (loginBtn && !loginBtn.dataset.bound) {
-        loginBtn.addEventListener('click', handleAuthSubmit);
-        loginBtn.dataset.bound = 'true';
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        updateAuthUI(session?.user || null);
+    });
+
+    /**
+     * Attach submit listeners exactly once.
+     * Uses dataset.bound as a guard and removeEventListener as a fallback.
+     */
+    function bindAuthListeners() {
+        console.log('DalalScope: Binding auth listeners...');
+        
+        // Login button
+        const loginBtn = document.getElementById('auth-login-btn');
+        if (loginBtn) {
+            loginBtn.removeEventListener('click', handleAuthSubmit);
+            loginBtn.addEventListener('click', handleAuthSubmit);
+            loginBtn.dataset.bound = 'true';
+        }
+
+        // Signup button
+        const signupBtn = document.getElementById('auth-signup-btn');
+        if (signupBtn) {
+            signupBtn.removeEventListener('click', handleAuthSubmit);
+            signupBtn.addEventListener('click', handleAuthSubmit);
+            signupBtn.dataset.bound = 'true';
+        }
+
+        // Enter key on login password field
+        const loginPwd = document.getElementById('auth-password');
+        if (loginPwd) {
+            loginPwd.removeEventListener('keydown', handleLoginEnter);
+            loginPwd.addEventListener('keydown', handleLoginEnter);
+            loginPwd.dataset.bound = 'true';
+        }
+
+        // Enter key on signup password field
+        const signupPwd = document.getElementById('signup-password');
+        if (signupPwd) {
+            signupPwd.removeEventListener('keydown', handleSignupEnter);
+            signupPwd.addEventListener('keydown', handleSignupEnter);
+            signupPwd.dataset.bound = 'true';
+        }
     }
 
-    // Signup button
-    const signupBtn = document.getElementById('auth-signup-btn');
-    if (signupBtn && !signupBtn.dataset.bound) {
-        signupBtn.addEventListener('click', handleAuthSubmit);
-        signupBtn.dataset.bound = 'true';
+    // Helper functions for named references (required for removeEventListener)
+    function handleLoginEnter(e) { if (e.key === 'Enter') handleAuthSubmit(); }
+    function handleSignupEnter(e) { if (e.key === 'Enter') handleAuthSubmit(); }
+
+    // Bind as soon as the DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindAuthListeners);
+    } else {
+        bindAuthListeners();
     }
 
-    // Enter key on login password field
-    const loginPwd = document.getElementById('auth-password');
-    if (loginPwd && !loginPwd.dataset.bound) {
-        loginPwd.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuthSubmit(); });
-        loginPwd.dataset.bound = 'true';
-    }
+    // ── Global window exports ─────────────────────────────────────────────────────
 
-    // Enter key on signup password field
-    const signupPwd = document.getElementById('signup-password');
-    if (signupPwd && !signupPwd.dataset.bound) {
-        signupPwd.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAuthSubmit(); });
-        signupPwd.dataset.bound = 'true';
-    }
+    window.supabase = supabase;
+    window.authShowModal = showAuthModal;
+    window.authHideModal = closeAuthModal;
+    window.authSetMode = setAuthMode;
+    window.authHandleSubmit = handleAuthSubmit;
+    window.authProfileSubmit = handleProfileSubmit;
+    window.authSignOut = signOut;
+    window.authBindListeners = bindAuthListeners;
+    window.authGetToken = async function () {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token || null;
+    };
 }
-
-// Bind as soon as the DOM is ready (auth.js is loaded as a module so DOM is
-// guaranteed to exist, but guard with DOMContentLoaded just in case).
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindAuthListeners);
-} else {
-    bindAuthListeners();
-}
-
-// ── Global window exports ─────────────────────────────────────────────────────
-
-window.supabase = supabase;
-window.authShowModal = showAuthModal;
-window.authHideModal = closeAuthModal;
-window.authSetMode = setAuthMode;
-window.authHandleSubmit = handleAuthSubmit;
-window.authProfileSubmit = handleProfileSubmit;
-window.authSignOut = signOut;
-window.authGetToken = async function () {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || null;
-};
