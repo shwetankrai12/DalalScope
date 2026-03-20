@@ -2691,6 +2691,59 @@
             </div>
         </div>
 
+        <!-- ── News + Sentiment Section ─────────────────────── -->
+        <section id="news-section">
+
+            <!-- Signal banner -->
+            <div class="signal-banner NEUTRAL" id="signal-banner">
+                <div>
+                    <div class="signal-label NEUTRAL" id="signal-label">
+                        <span class="signal-arrow" id="signal-arrow">→</span>
+                        <span id="signal-text">NEUTRAL</span>
+                    </div>
+                    <div class="signal-meta" id="signal-meta">Analysing headlines…</div>
+                </div>
+                <div style="min-width:180px;">
+                    <div
+                        style="font-family:var(--mono);font-size:.68rem;color:var(--text-faint);margin-bottom:6px;letter-spacing:.08em;">
+                        BULLISH SENTIMENT</div>
+                    <div class="sentiment-meter">
+                        <div class="sentiment-fill NEUTRAL" id="sentiment-fill" style="width:50%"></div>
+                    </div>
+                    <div style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted);margin-top:4px;"
+                        id="sentiment-pct">50%</div>
+                </div>
+            </div>
+
+            <!-- Breakdown grid -->
+            <div class="breakdown-grid">
+                <div class="breakdown-card bullish">
+                    <div class="breakdown-number" id="bd-bullish">0</div>
+                    <div class="breakdown-tag">↑ Bullish</div>
+                </div>
+                <div class="breakdown-card bearish">
+                    <div class="breakdown-number" id="bd-bearish">0</div>
+                    <div class="breakdown-tag">↓ Bearish</div>
+                </div>
+                <div class="breakdown-card neutral">
+                    <div class="breakdown-number" id="bd-neutral">0</div>
+                    <div class="breakdown-tag">→ Neutral</div>
+                </div>
+            </div>
+
+            <!-- Headlines list -->
+            <div class="news-list">
+                <div class="news-section-title">Latest Headlines</div>
+                <div id="headlines-container">
+                    <!-- Skeleton loaders shown while fetching -->
+                    <div class="news-skeleton"></div>
+                    <div class="news-skeleton"></div>
+                    <div class="news-skeleton"></div>
+                </div>
+            </div>
+
+        </section>
+
         </div><!-- end tab-market -->
 
         <!-- Portfolio Tab -->
@@ -2772,58 +2825,6 @@
         </div><!-- end tab-portfolio -->
 
 
-        <!-- ── News + Sentiment Section ─────────────────────── -->
-        <section id="news-section">
-
-            <!-- Signal banner -->
-            <div class="signal-banner NEUTRAL" id="signal-banner">
-                <div>
-                    <div class="signal-label NEUTRAL" id="signal-label">
-                        <span class="signal-arrow" id="signal-arrow">→</span>
-                        <span id="signal-text">NEUTRAL</span>
-                    </div>
-                    <div class="signal-meta" id="signal-meta">Analysing headlines…</div>
-                </div>
-                <div style="min-width:180px;">
-                    <div
-                        style="font-family:var(--mono);font-size:.68rem;color:var(--text-faint);margin-bottom:6px;letter-spacing:.08em;">
-                        BULLISH SENTIMENT</div>
-                    <div class="sentiment-meter">
-                        <div class="sentiment-fill NEUTRAL" id="sentiment-fill" style="width:50%"></div>
-                    </div>
-                    <div style="font-family:var(--mono);font-size:.72rem;color:var(--text-muted);margin-top:4px;"
-                        id="sentiment-pct">50%</div>
-                </div>
-            </div>
-
-            <!-- Breakdown grid -->
-            <div class="breakdown-grid">
-                <div class="breakdown-card bullish">
-                    <div class="breakdown-number" id="bd-bullish">0</div>
-                    <div class="breakdown-tag">↑ Bullish</div>
-                </div>
-                <div class="breakdown-card bearish">
-                    <div class="breakdown-number" id="bd-bearish">0</div>
-                    <div class="breakdown-tag">↓ Bearish</div>
-                </div>
-                <div class="breakdown-card neutral">
-                    <div class="breakdown-number" id="bd-neutral">0</div>
-                    <div class="breakdown-tag">→ Neutral</div>
-                </div>
-            </div>
-
-            <!-- Headlines list -->
-            <div class="news-list">
-                <div class="news-section-title">Latest Headlines</div>
-                <div id="headlines-container">
-                    <!-- Skeleton loaders shown while fetching -->
-                    <div class="news-skeleton"></div>
-                    <div class="news-skeleton"></div>
-                    <div class="news-skeleton"></div>
-                </div>
-            </div>
-
-        </section>
 
         <!-- Add Holding Modal -->
         <div class="pt-modal-backdrop" id="pt-modal" onclick="if(event.target===this)closeAddModal()">
