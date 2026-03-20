@@ -2871,6 +2871,7 @@
 
                 const newsSection = document.getElementById('news-section');
                 if (newsSection && tabId !== 'tab-market') {
+                    newsSection.classList.add('stitch-hidden');
                     newsSection.classList.remove('visible');
                 }
             }
@@ -3529,6 +3530,7 @@
             if (!section) return;
 
             // Show section with skeleton loaders
+            section.classList.remove('stitch-hidden');
             section.classList.add('visible');
             container.innerHTML = `
     <div class="news-skeleton"></div>
@@ -3686,7 +3688,10 @@
 
         function hideNewsSection() {
             const section = document.getElementById('news-section');
-            if (section) section.classList.remove('visible');
+            if (section) {
+                section.classList.add('stitch-hidden');
+                section.classList.remove('visible');
+            }
         }
 
         /* ── Unified Chart Logic ──────────────────── */
