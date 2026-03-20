@@ -173,11 +173,14 @@ def score_headline(title: str) -> tuple[int, str]:
     else:
         return 0, "NEUTRAL"
 
-def fetch_news(ticker: str) -> dict:
+from email.utils import parsedate_to_datetime
+from datetime import datetime, timezone, timedelta
+
+def fetch_news(ticker: str, days: str = "7") -> dict:
     """
     Fetches Google News RSS for the given NSE ticker,
-    scores each headline for sentiment, and returns
-    aggregated signal + headline list.
+    filters by 'days' (1, 7, 30, all), scores each headline for sentiment,
+    and returns aggregated signal + headline list.
     """
     # Strip .NS suffix if present
     clean_ticker = ticker.upper().replace(".NS", "")
@@ -219,7 +222,15 @@ def fetch_news(ticker: str) -> dict:
     total_score = 0
     breakdown = {"bullish": 0, "bearish": 0, "neutral": 0}
 
-    for item in items[:10]:  # limit to 10 most recent
+    now = datetime.now(timezone.utc)
+    max_days = None
+    if days != "all":
+        try:
+            max_days = int(days)
+        except ValueError:
+            max_days = 7
+
+    for item in items[:50]:  # Process more items to ensure we have enough after filtering
         title_el   = item.find("title")
         link_el    = item.find("link")
         pub_el     = item.find("pubDate")
@@ -229,6 +240,18 @@ def fetch_news(ticker: str) -> dict:
         link   = link_el.text   if link_el   is not None else ""
         pub    = pub_el.text    if pub_el    is not None else ""
         source = source_el.text if source_el is not None else "Unknown"
+        
+        # Filter by date
+        if max_days is not None and pub:
+            try:
+                pub_dt = parsedate_to_datetime(pub)
+                if pub_dt is not None:
+                    if pub_dt.tzinfo is None:
+                        pub_dt = pub_dt.replace(tzinfo=timezone.utc)
+                    if (now - pub_dt).days > max_days:
+                        continue  # skip headlines older than requested days
+            except Exception:
+                pass # If parsing fails, just include it or skip it? Let's include if parsing fails
 
         # Clean Google News redirect URLs — extract real URL
         if "news.google.com" in link:
@@ -248,6 +271,9 @@ def fetch_news(ticker: str) -> dict:
             "sentiment": sentiment,
             "score":     score
         })
+        
+        if len(headlines) >= 20: # Cap at 20 relevant headlines per request
+            break
 
     # Aggregate signal
     if total_score > 2:

@@ -46,7 +46,7 @@ async def get_current_user(request: Request) -> str:
 
     token = auth_header.replace("Bearer ", "")
     if not supabase_admin:
-        raise HTTPException(status_code=500, detail="Supabase not configured")
+        raise HTTPException(status_code=503, detail="Auth service not configured — set SUPABASE_URL and SUPABASE_SERVICE_KEY in environment.")
 
     try:
         user_response = supabase_admin.auth.get_user(token)
@@ -189,6 +189,108 @@ async def get_intraday(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/sparkline")
+async def get_sparkline(symbol: str):
+    """
+    Fetches the last 7 closing prices for a sparkline chart.
+    Tries intraday mode first, falls back to history mode if that fails.
+    """
+    try:
+        ticker = symbol.upper()
+        if not ticker.startswith("^") and not ticker.endswith(".NS"):
+            ticker = f"{ticker}.NS"
+
+        data = None
+
+        # Try intraday mode first (7 trading days)
+        try:
+            data = fetch_ohlcv(ticker, mode="intraday", interval="1d", period="7d")
+        except Exception:
+            pass
+
+        # Fallback: use history mode with explicit date range (last 14 calendar days)
+        if data is None or data.empty:
+            from datetime import date, timedelta
+            end_d = date.today()
+            start_d = end_d - timedelta(days=14)
+            try:
+                data = fetch_ohlcv(ticker, mode="history",
+                                   start=start_d.isoformat(), end=end_d.isoformat())
+            except Exception:
+                pass
+
+        if data is None or data.empty:
+            raise HTTPException(status_code=404, detail=f"No sparkline data found for '{ticker}'.")
+
+        prices = data["Close"].tail(7).tolist()
+        return {"symbol": ticker, "prices": prices}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Index History for Metrics Chart ────────────────────────────────────────────
+
+INDEX_MAP = {
+    "NIFTY50": "^NSEI",
+    "SENSEX": "^BSESN",
+    "BANKNIFTY": "^NSEBANK",
+    "INDIAVIX": "^INDIAVIX",
+}
+
+@app.get("/api/index-history")
+async def get_index_history(symbol: str = "NIFTY50", days: int = 30):
+    """
+    Fetches historical closing prices for a market index.
+    Returns { labels: ["01 Feb", ...], values: [21800, ...] }
+    """
+    from datetime import datetime, timedelta
+
+    try:
+        ticker = INDEX_MAP.get(symbol.upper())
+        if not ticker:
+            raise HTTPException(status_code=400, detail=f"Unknown index: {symbol}. Use one of: {list(INDEX_MAP.keys())}")
+
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=days + 5)).strftime("%Y-%m-%d")
+
+        data = fetch_ohlcv(ticker, mode="history", start=start_date, end=end_date)
+        if data.empty:
+            raise HTTPException(status_code=404, detail="No history data found.")
+
+        labels = []
+        values = []
+        for _, row in data.iterrows():
+            date_val = row.get("Date", "")
+            try:
+                if hasattr(date_val, 'strftime'):
+                    labels.append(date_val.strftime("%d %b"))
+                else:
+                    dt_str = str(date_val)
+                    if "T" in dt_str:
+                        dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                    else:
+                        dt = datetime.strptime(dt_str[:10], "%Y-%m-%d")
+                    labels.append(dt.strftime("%d %b"))
+            except Exception:
+                labels.append(str(date_val)[:10])
+            values.append(round(float(row["Close"]), 2))
+
+        # Trim to requested day count
+        if len(labels) > days:
+            labels = labels[-days:]
+            values = values[-days:]
+
+        return {"symbol": symbol, "labels": labels, "values": values}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/stock/resolve")
 async def resolve_company(company: str):
     """Resolves a company name to its NSE ticker symbol."""
@@ -204,8 +306,8 @@ async def resolve_company(company: str):
 
 
 @app.get("/api/stock/news")
-async def get_stock_news(ticker: str):
-    """Returns news headlines + sentiment for a given NSE ticker."""
+async def get_stock_news(ticker: str, days: str = "7"):
+    """Returns news headlines + sentiment for a given NSE ticker, optionally filtered by days."""
     if not ticker:
         raise HTTPException(status_code=400, detail="ticker parameter is required")
 
@@ -213,7 +315,7 @@ async def get_stock_news(ticker: str):
     if not ticker.endswith(".NS"):
         ticker = f"{ticker}.NS"
 
-    data = fetch_news(ticker)
+    data = fetch_news(ticker, days=days)
     if "error" in data and not data["headlines"]:
         raise HTTPException(status_code=503, detail=f"News fetch failed: {data['error']}")
     return data
@@ -297,7 +399,7 @@ async def get_single_quote(ticker: str):
 async def get_profile(user_id: str = Depends(get_current_user)):
     """Returns the authenticated user's profile."""
     if not supabase_admin:
-        raise HTTPException(status_code=500, detail="Supabase not configured")
+        raise HTTPException(status_code=503, detail="Auth service not configured.")
     try:
         result = (
             supabase_admin.table("profiles")
@@ -308,6 +410,10 @@ async def get_profile(user_id: str = Depends(get_current_user)):
         )
         return result.data or {}
     except Exception as e:
+        # Profile row may not exist yet for new users — return empty dict
+        err_str = str(e).lower()
+        if "no rows" in err_str or "pgrst116" in err_str:
+            return {}
         raise HTTPException(status_code=500, detail=str(e))
 
 

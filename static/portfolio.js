@@ -12,6 +12,9 @@ let holdings = [];
 /** @type {{ [ticker: string]: number | null }} */
 let livePrices = {};
 
+/** @type {{ [ticker: string]: number | null }} */
+let prevPrices = {};
+
 let isRefreshing = false;
 
 // ── API Authentication ─────────────────────────────────────────────────────────
@@ -107,7 +110,11 @@ async function refreshPrices() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        
+        // Save current prices as prev for flash animation
+        prevPrices = { ...livePrices };
         livePrices = { ...livePrices, ...data };
+        
         renderPortfolioTable();
         renderSummaryBar();
         showPortfolioToast('Prices refreshed', 'success');
@@ -142,19 +149,72 @@ function renderPortfolioTable() {
 
     emptyState?.classList.add('pt-hidden');
     tableWrap?.classList.remove('pt-hidden');
+    
+    // Pre-calculate to find best/worst and total values
+    const { totalCurrent, totalInvested } = calcPortfolioTotals();
+    const effectiveTotal = totalCurrent > 0 ? totalCurrent : totalInvested;
+    
+    let bestIdx = -1;
+    let worstIdx = -1;
+    let maxPct = -Infinity;
+    let minPct = Infinity;
+    
+    const holdingStats = holdings.map((h, idx) => {
+        const stats = calcHoldingStats(h);
+        if (stats.pnlPct != null) {
+            if (stats.pnlPct > maxPct) { maxPct = stats.pnlPct; bestIdx = idx; }
+            if (stats.pnlPct < minPct) { minPct = stats.pnlPct; worstIdx = idx; }
+        }
+        return stats;
+    });
 
     tbody.innerHTML = holdings.map((h, idx) => {
-        const { ltp, invested, currentVal, pnl, pnlPct } = calcHoldingStats(h);
-        const posClass = pnl == null ? '' : pnl >= 0 ? 'pt-pos' : 'pt-neg';
+        const { ltp, invested, currentVal, pnl, pnlPct } = holdingStats[idx];
+        const posClass = pnl == null ? '' : pnl > 0 ? 'pt-pos' : pnl < 0 ? 'pt-neg' : '';
+        const rowClass = pnl == null ? '' : pnl > 0 ? 'pt-row-pos' : pnl < 0 ? 'pt-row-neg' : '';
+        
+        const oldLtp = prevPrices[h.ticker];
+        let flashClass = '';
+        if (oldLtp != null && ltp != null && oldLtp !== ltp) {
+            flashClass = ltp > oldLtp ? 'ltp-flash-green' : 'ltp-flash-red';
+        }
+
         const ltpDisplay = ltp != null
-            ? fmtINR(ltp)
+            ? `<div class="${flashClass}">${fmtINR(ltp)}</div>`
             : `<span class="pt-loading">…</span>`;
+            
+        // Weight %
+        const weightPct = (evalVal => evalVal > 0 && effectiveTotal > 0 ? (evalVal / effectiveTotal * 100).toFixed(1) : '0.0')
+                            (currentVal != null ? currentVal : invested);
+
+        // Progress Bar
+        let progressPct = 0;
+        let progressColor = 'var(--text-muted)';
+        if (invested > 0 && currentVal != null) {
+            progressPct = Math.min((currentVal / invested) * 100, 150);
+            progressColor = currentVal >= invested ? 'var(--accent)' : 'var(--red)';
+        }
+
+        // Badges
+        let badgeHtml = '';
+        if (idx === bestIdx && maxPct > 0) badgeHtml = `<span class="pt-badge pt-badge-best">↑ BEST</span>`;
+        if (idx === worstIdx && minPct < 0) badgeHtml = `<span class="pt-badge pt-badge-worst">↓ WORST</span>`;
+        
+        // Warn Chip
+        let warnHtml = '';
+        if (pnlPct != null && pnlPct < -10) {
+            warnHtml = `<div class="pt-warn-chip">⚠ ${pnlPct.toFixed(1)}%</div>`;
+        }
 
         return `
-        <tr class="pt-row" style="animation-delay:${idx * 40}ms">
-            <td class="pt-ticker-cell">
+        <tr class="pt-row ${rowClass}" style="animation-delay:${idx * 40}ms">
+            <td class="pt-ticker-cell" style="position:relative; overflow:hidden;">
                 <span class="pt-ticker-badge">${h.ticker.replace('.NS', '')}</span>
+                <span class="pt-badge pt-badge-weight">${weightPct}%</span>
+                ${badgeHtml}
                 <span class="pt-company">${escHtml(h.companyName)}</span>
+                ${warnHtml}
+                <div class="pt-progress-wrap"><div class="pt-progress-bar" style="width: ${progressPct}%; background-color: ${progressColor};"></div></div>
             </td>
             <td class="pt-num">${fmtQty(h.qty)}</td>
             <td class="pt-num">${fmtINR(h.avgBuyPrice)}</td>
@@ -165,12 +225,85 @@ function renderPortfolioTable() {
                 ${fmtINR(pnl)}
                 <span class="pt-pct">${fmtPct(pnlPct)}</span>
             </td>
+            <td class="pt-sparkline-cell">
+                <canvas id="spark-${idx}" class="pt-sparkline-canvas"></canvas>
+            </td>
             <td>
                 <button class="pt-del-btn" onclick="deleteHolding(${idx})" title="Remove holding">✕</button>
             </td>
         </tr>`;
     }).join('');
+    
+    // Render sparklines after DOM update
+    holdings.forEach((h, idx) => {
+        renderSparkline(h.ticker, idx);
+    });
 }
+
+// Sparkline rendering cache
+const sparklineData = {};
+
+async function renderSparkline(ticker, idx) {
+    const canvas = document.getElementById(`spark-${idx}`);
+    if (!canvas) return;
+    
+    // Use cached data to avoid re-fetching on every table render (e.g., when adding a new holding)
+    // We will clear this cache when forcing a full refresh
+    let prices = sparklineData[ticker];
+    
+    if (!prices) {
+        try {
+            const res = await fetch(`/api/sparkline?symbol=${encodeURIComponent(ticker)}`);
+            if (res.ok) {
+                const data = await res.json();
+                prices = data.prices;
+                sparklineData[ticker] = prices;
+            }
+        } catch (e) {
+            console.error("Sparkline fetch failed:", e);
+        }
+    }
+    
+    if (!prices || prices.length === 0) return;
+    
+    const isUp = prices[prices.length - 1] >= prices[0];
+    const color = isUp ? '#00ff88' : '#ff3b3b';
+    
+    if (window[`chart_spark_${idx}`]) {
+        window[`chart_spark_${idx}`].destroy();
+    }
+    
+    const ctx = canvas.getContext('2d');
+    window[`chart_spark_${idx}`] = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: prices.map((_, i) => i),
+            datasets: [{
+                data: prices,
+                borderColor: color,
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } },
+            animation: false
+        }
+    });
+}
+
+// Override refreshPrices to also clear sparkline cache
+const _originalRefreshPrices = refreshPrices;
+refreshPrices = async function() {
+    // Clear sparkline cache so it fetches fresh data
+    for (const key in sparklineData) delete sparklineData[key];
+    await _originalRefreshPrices.apply(this);
+};
 
 function renderSummaryBar() {
     const { totalInvested, totalCurrent, totalPnl, totalPnlPct } = calcPortfolioTotals();
