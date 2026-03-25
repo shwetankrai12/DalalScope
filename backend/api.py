@@ -7,6 +7,12 @@ from typing import List, Optional
 from datetime import date as DateType
 import json
 import os
+import sys
+
+# Inject the backend directory into sys.path to ensure 'import fetcher' resolves
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -14,6 +20,7 @@ load_dotenv()
 from supabase import create_client
 from resolver import resolve_ticker
 from fetcher import fetch_ohlcv, fetch_news
+from optimizer import run_optimization
 
 app = FastAPI(title="NSE Market Dashboard API")
 
@@ -36,7 +43,7 @@ if SUPABASE_URL and SUPABASE_SERVICE_KEY:
     supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
-# ── JWT Auth dependency ────────────────────────────────────────────────────────
+import httpx
 
 async def get_current_user(request: Request) -> str:
     """Extracts and validates the Supabase JWT from Authorization header."""
@@ -45,17 +52,29 @@ async def get_current_user(request: Request) -> str:
         raise HTTPException(status_code=401, detail="Missing auth token")
 
     token = auth_header.replace("Bearer ", "")
-    if not supabase_admin:
-        raise HTTPException(status_code=503, detail="Auth service not configured — set SUPABASE_URL and SUPABASE_SERVICE_KEY in environment.")
+    if not SUPABASE_URL:
+        raise HTTPException(status_code=503, detail="Auth service not configured — set SUPABASE_URL in environment.")
 
+    # We use a manual httpx validation against the GoTrue API instead of
+    # `supabase_admin.auth.get_user` because the local tokens do not
+    # conform to Python's local JWT formatting validation and crash.
     try:
-        user_response = supabase_admin.auth.get_user(token)
-        if not user_response or not user_response.user:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return user_response.user.id
+        async with httpx.AsyncClient() as client:
+            r = await client.get(
+                f"{SUPABASE_URL}/auth/v1/user",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "apikey": os.environ.get("SUPABASE_ANON_KEY") 
+                }
+            )
+            if r.status_code != 200:
+                raise HTTPException(status_code=401, detail="Invalid token")
+            user_data = r.json()
+            return user_data.get("id")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
-
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
@@ -78,11 +97,15 @@ class ProfileUpdate(BaseModel):
     risk_appetite: Optional[str] = None
 
 
+class PortfolioRequest(BaseModel):
+    holdings: List[Holding]
+
+
 # ── Stock endpoints ────────────────────────────────────────────────────────────
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse("static/favicon.ico")
+    return FileResponse(os.path.join(STATIC_DIR, "favicon.ico"))
 
 
 @app.get("/health")
@@ -387,10 +410,47 @@ async def get_single_quote(ticker: str):
             "close": float(latest["Close"]),
             "date": latest["Date"]
         }
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Portfolio Analysis ────────────────────────────────────────────────────────
+
+@app.post("/api/portfolio/analyze")
+async def analyze_portfolio(request: PortfolioRequest):
+    """
+    Accepts user's holdings and returns:
+    - current vs optimized weights
+    - Sharpe ratio comparison
+    - diversification score
+    - sector concentration
+    - plain English suggestions
+    """
+    if len(request.holdings) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Add at least 2 stocks to run portfolio analysis."
+        )
+
+    for h in request.holdings:
+        if not h.ticker.upper().endswith('.NS'):
+            h.ticker = h.ticker.upper() + '.NS'
+
+    holdings_data = [
+        {
+            "ticker": h.ticker,
+            "qty": h.qty,
+            "avg_buy_price": h.avg_buy_price
+        }
+        for h in request.holdings
+    ]
+
+    result = run_optimization(holdings_data)
+
+    if "error" in result:
+        raise HTTPException(status_code=422, detail=result["error"])
+
+    return result
 
 
 # ── Profile endpoints ─────────────────────────────────────────────────────────
@@ -435,10 +495,12 @@ async def update_profile(
         if "date_of_birth" in data and data["date_of_birth"]:
             data["date_of_birth"] = str(data["date_of_birth"])
 
+        # Include user id so upsert can match/insert the row
+        data["id"] = user_id
+
         result = (
             supabase_admin.table("profiles")
-            .update(data)
-            .eq("id", user_id)
+            .upsert(data)
             .execute()
         )
         return result.data[0] if result.data else {}
@@ -448,7 +510,7 @@ async def update_profile(
 
 # ── Static files & startup ────────────────────────────────────────────────────
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

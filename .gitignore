@@ -12,3 +12,11 @@ __pycache__/
 # Environment
 .env
 venv/
+.venv/
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+static/dist/

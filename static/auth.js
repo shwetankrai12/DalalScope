@@ -265,6 +265,26 @@ if (!window._authLoaded) {
         updateAuthUI(session?.user || null);
     });
 
+    // ── Periodic session check ────────────────────────────────────────────────
+    // If the user is deleted from the DB, sign them out within 30s
+    setInterval(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return; // not logged in, nothing to check
+        try {
+            const res = await fetch('/api/profile', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (res.status === 401) {
+                console.warn('DalalScope: Session invalid — signing out.');
+                await supabase.auth.signOut();
+                updateAuthUI(null);
+                if (typeof showToast === 'function') {
+                    showToast('Your session has expired. Please sign in again.', 'warning');
+                }
+            }
+        } catch { /* network error — skip this check */ }
+    }, 30_000);
+
     /**
      * Attach submit listeners exactly once.
      * Uses dataset.bound as a guard and removeEventListener as a fallback.

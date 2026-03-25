@@ -34,7 +34,13 @@ async function loadHoldings() {
         const res = await fetch('/api/holdings', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        holdings = res.ok ? await res.json() : [];
+        if (!res.ok) {
+            console.error(`Holdings fetch failed: ${res.status}`);
+            showPortfolioToast('Failed to load portfolio. Check your connection.', 'error');
+            holdings = [];
+            return;
+        }
+        holdings = await res.json();
         // normalize field names from snake_case to camelCase for the frontend
         holdings = holdings.map(h => ({
             ticker: h.ticker,
@@ -44,6 +50,7 @@ async function loadHoldings() {
         }));
     } catch (err) {
         console.error("Failed to load holdings:", err);
+        showPortfolioToast('Failed to load portfolio. Check your connection.', 'error');
         holdings = [];
     }
 }
@@ -217,7 +224,7 @@ function renderPortfolioTable() {
                 <div class="pt-progress-wrap"><div class="pt-progress-bar" style="width: ${progressPct}%; background-color: ${progressColor};"></div></div>
             </td>
             <td class="pt-num">${fmtQty(h.qty)}</td>
-            <td class="pt-num">${fmtINR(h.avgBuyPrice)}</td>
+            <td class="pt-num col-avg-buy">${fmtINR(h.avgBuyPrice)}</td>
             <td class="pt-num pt-ltp">${ltpDisplay}</td>
             <td class="pt-num">${fmtINR(invested)}</td>
             <td class="pt-num ${posClass}">${fmtINR(currentVal)}</td>
@@ -225,7 +232,7 @@ function renderPortfolioTable() {
                 ${fmtINR(pnl)}
                 <span class="pt-pct">${fmtPct(pnlPct)}</span>
             </td>
-            <td class="pt-sparkline-cell">
+            <td class="pt-sparkline-cell col-trend">
                 <canvas id="spark-${idx}" class="pt-sparkline-canvas"></canvas>
             </td>
             <td>
@@ -506,25 +513,395 @@ async function initPortfolio() {
 
 // ── Auth integration ────────────────────────────────────────────────────────
 
-// Wait for supabase to be ready on window
-const checkSupabaseAndInit = setInterval(() => {
-    if (window.supabase) {
-        clearInterval(checkSupabaseAndInit);
-        
-        window.supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                initPortfolio();
-            } else {
-                holdings = [];
-                livePrices = {};
-                renderPortfolioTable();
-                renderSummaryBar();
-            }
+// ── Portfolio Analysis (PyPortfolioOpt) ──────────────────────────────────────
+
+let analysisLoading = false;
+
+/**
+ * Executes a Mean-Variance Optimization on the user's holdings.
+ * Communicates with the /api/portfolio/analyze endpoint.
+ */
+async function analyzePortfolio() {
+    if (analysisLoading) return;
+    if (holdings.length < 2) {
+        showPortfolioToast('Add at least 2 holdings to run portfolio analysis.', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('pt-analyze-btn');
+    const container = document.getElementById('pt-analysis-results');
+    
+    analysisLoading = true;
+    if (btn) {
+        btn.innerHTML = "⚡ <span>Analyzing...</span>";
+        btn.disabled = true;
+    }
+    if (container) {
+        document.querySelector('.pt-summary-bar')?.classList.add('pt-hidden');
+        document.querySelector('.pt-table-card')?.classList.add('pt-hidden');
+        container.innerHTML = `
+            <div class="pt-analysis-loader" style="padding: 2rem; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-top: 1rem;">
+                <div class="pt-loader-spinner" style="width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: pt-spin 0.8s linear infinite; margin: 0 auto 1rem;"></div>
+                <p style="font-family: var(--sans); color: var(--text);">Running Mean-Variance Optimization...</p>
+                <p style="font-size: 0.7rem; opacity: 0.6; font-family: var(--mono); color: var(--text-muted);">Calculating Efficient Frontier & Sharpe Ratios</p>
+            </div>
+        `;
+        container.classList.remove('pt-hidden');
+    }
+
+    try {
+        const token = await getAuthToken();
+        const requestBody = {
+            holdings: holdings.map(h => ({
+                ticker: h.ticker,
+                company_name: h.companyName,
+                qty: h.qty,
+                avg_buy_price: h.avgBuyPrice
+            }))
+        };
+
+        const res = await fetch('/api/portfolio/analyze', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify(requestBody)
         });
 
-        // initial check
-        window.supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) initPortfolio();
-        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Analysis failed");
+        }
+
+        const data = await res.json();
+        renderOptimizationResults(data);
+    } catch (err) {
+        if (container) {
+            container.innerHTML = `
+                <div class="pt-analysis-error" style="padding: 2rem; text-align: center; background: rgba(255,59,59,0.05); border: 1px solid var(--red); border-radius: 8px; margin-top: 1rem;">
+                    <p style="color: var(--red); font-weight: bold;">❌ Optimization Failed</p>
+                    <p style="font-size: 0.8rem; opacity: 0.8; color: var(--text-muted);">${err.message}</p>
+                    <button class="pt-btn" style="margin-top: 10px;" onclick="analyzePortfolio()">Retry Analysis</button>
+                </div>
+            `;
+        }
+        showPortfolioToast(err.message, "error");
+    } finally {
+        analysisLoading = false;
+        if (btn) {
+            btn.innerHTML = "⚡ <span>Analyze</span>";
+            btn.disabled = false;
+        }
     }
+}
+
+/**
+ * Dynamically renders the results of the portfolio analysis.
+ */
+function renderOptimizationResults(data) {
+    const container = document.getElementById('pt-analysis-results');
+    if (!container) return;
+
+    const { 
+        current_sharpe, optimized_sharpe, 
+        diversification_score, suggestions, 
+        sector_concentration, current_weights,
+        optimized_weights
+    } = data;
+
+    const currentSharpeVal = current_sharpe || 0;
+    const optimizedSharpeVal = optimized_sharpe || 0;
+    const sharpeDiff = (optimizedSharpeVal - currentSharpeVal).toFixed(2);
+    const sharpeColor = sharpeDiff > 0 ? 'var(--accent)' : 'var(--text-muted)';
+
+    let totalInvested = 0;
+    let totalCurrent = 0;
+    
+    holdings.forEach(h => {
+        const invested = h.qty * h.avgBuyPrice;
+        const ltp = livePrices[h.ticker] || h.avgBuyPrice;
+        const currentVal = h.qty * ltp;
+        totalInvested += invested;
+        totalCurrent += currentVal;
+    });
+
+    const totalPnl = totalCurrent - totalInvested;
+    const totalReturn = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
+    const pnlColor = totalPnl >= 0 ? 'var(--accent)' : 'var(--red)';
+
+    container.innerHTML = `
+        <!-- Section 1: Summary Bar -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="background: var(--surface-light); padding: 16px; border-radius: 8px;">
+                <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; letter-spacing: 0.1em; margin-bottom: 4px;">Invested</div>
+                <div style="font-family: var(--sans); font-size: 22px; font-weight: bold; color: var(--text);">${fmtINR(totalInvested)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">${holdings.length} holdings</div>
+            </div>
+            <div style="background: var(--surface-light); padding: 16px; border-radius: 8px;">
+                <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; letter-spacing: 0.1em; margin-bottom: 4px;">Current Value</div>
+                <div style="font-family: var(--sans); font-size: 22px; font-weight: bold; color: var(--text);">${fmtINR(totalCurrent)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">live market data</div>
+            </div>
+            <div style="background: var(--surface-light); padding: 16px; border-radius: 8px;">
+                <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; letter-spacing: 0.1em; margin-bottom: 4px;">Total P&L</div>
+                <div style="font-family: var(--sans); font-size: 22px; font-weight: bold; color: ${pnlColor};">${totalPnl >= 0 ? '+' : ''}${fmtINR(totalPnl)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">since purchase</div>
+            </div>
+            <div style="background: var(--surface-light); padding: 16px; border-radius: 8px;">
+                <div style="font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--text-muted); opacity: 0.8; letter-spacing: 0.1em; margin-bottom: 4px;">Return</div>
+                <div style="font-family: var(--sans); font-size: 22px; font-weight: bold; color: ${pnlColor};">${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%</div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">unrealized gain/loss</div>
+            </div>
+        </div>
+
+        <!-- Section 2: Holdings Table -->
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 1.5rem;">
+            <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Holdings Breakdown</div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: var(--sans); font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                            <th style="padding: 12px 8px;">Stock</th>
+                            <th style="padding: 12px 8px;">Qty</th>
+                            <th class="col-avg-buy" style="padding: 12px 8px;">Avg Buy</th>
+                            <th style="padding: 12px 8px;">LTP</th>
+                            <th style="padding: 12px 8px;">Invested</th>
+                            <th style="padding: 12px 8px;">Current</th>
+                            <th style="padding: 12px 8px;">P&L</th>
+                            <th style="padding: 12px 8px; width: 120px;">Allocation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${holdings.map(h => {
+                            const inv = h.qty * h.avgBuyPrice;
+                            const lp = livePrices[h.ticker] || h.avgBuyPrice;
+                            const cur = h.qty * lp;
+                            const pnl = cur - inv;
+                            const pnlPct = inv > 0 ? (pnl / inv) * 100 : 0;
+                            const pnlCol = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
+                            const allocPct = totalCurrent > 0 ? (cur / totalCurrent) * 100 : 0;
+                            const badgeBg = pnl >= 0 ? 'rgba(0, 200, 150, 0.1)' : 'rgba(244, 63, 94, 0.1)';
+                            const badgeCol = pnl >= 0 ? 'var(--accent)' : 'var(--red)';
+
+                            return `
+                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                <td style="padding: 12px 8px;">
+                                    <span style="background: ${badgeBg}; color: ${badgeCol}; padding: 4px 8px; border-radius: 12px; font-family: var(--mono); font-weight: bold; font-size: 0.8rem;">${h.ticker.replace('.NS', '')}</span>
+                                </td>
+                                <td style="padding: 12px 8px;">${fmtQty(h.qty)}</td>
+                                <td class="col-avg-buy" style="padding: 12px 8px;">${fmtINR(h.avgBuyPrice)}</td>
+                                <td style="padding: 12px 8px;">${fmtINR(lp)}</td>
+                                <td style="padding: 12px 8px;">${fmtINR(inv)}</td>
+                                <td style="padding: 12px 8px;">${fmtINR(cur)}</td>
+                                <td style="padding: 12px 8px;">
+                                    <div style="color: ${pnlCol}; font-weight: bold;">${pnl >= 0 ? '+' : ''}${fmtINR(pnl)}</div>
+                                    <div style="color: ${pnlCol}; font-size: 0.75rem; opacity: 0.8;">${pnl >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</div>
+                                </td>
+                                <td style="padding: 12px 8px;">
+                                    <div style="font-family: var(--mono); font-size: 0.8rem; margin-bottom: 4px; color: var(--text);">${allocPct.toFixed(1)}%</div>
+                                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                                        <div style="width: ${allocPct}%; height: 100%; background: ${pnlCol}; border-radius: 2px;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Analysis section -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Diversity Score</div>
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <div style="font-family: var(--sans); font-size: 48px; font-weight: bold; color: ${getScoreColor(diversification_score)}; line-height: 1;">
+                        ${diversification_score}<span style="font-size: 20px; color: var(--text-muted); opacity: 0.5;">/100</span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">${diversification_score < 50 ? 'Heavily Concentrated' : diversification_score < 75 ? 'Moderately Diversified' : 'Well Diversified'}</div>
+                </div>
+                <div style="border-top: 1px solid var(--border); margin: 16px 0;"></div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                    <span style="color: var(--text-muted);">Current Sharpe</span>
+                    <span style="font-family: var(--mono); color: var(--text); font-weight: bold;">${currentSharpeVal}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                    <span style="color: var(--text-muted);">Optimal Sharpe</span>
+                    <span style="font-family: var(--mono); color: var(--accent); font-weight: bold;">${optimizedSharpeVal}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span style="color: var(--text-muted);">Potential Delta</span>
+                    <span style="font-family: var(--mono); color: ${sharpeColor}; font-weight: bold;">+${sharpeDiff}</span>
+                </div>
+            </div>
+
+            <!-- Engineered Insights -->
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Engineered Insights</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${suggestions.map(s => {
+                        let dotColor = 'var(--text-muted)';
+                        if (s.toLowerCase().includes('warning') || s.toLowerCase().includes('reduce') || s.toLowerCase().includes('high risk')) dotColor = 'var(--red)';
+                        else if (s.toLowerCase().includes('good') || s.toLowerCase().includes('optimal') || s.toLowerCase().includes('buy')) dotColor = 'var(--accent)';
+                        else dotColor = 'var(--yellow)';
+                        
+                        return `
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: ${dotColor}; margin-top: 5px; flex-shrink: 0;"></div>
+                            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">${s}</div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- Sector Vector -->
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Sector Vector</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${Object.entries(sector_concentration).sort((a,b) => b[1] - a[1]).map(([sector, pct]) => {
+                        const barColor = pct > 20 ? 'var(--accent)' : 'var(--text-muted)';
+                        return `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 80px; font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sector}</div>
+                            <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
+                                <div style="width: ${pct}%; height: 100%; background: ${barColor}; border-radius: 3px;"></div>
+                            </div>
+                            <div style="width: 40px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text-muted);">${pct.toFixed(1)}%</div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Reallocation Matrix -->
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 1.5rem;">
+            <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;">Reallocation Matrix</div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: var(--sans); font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">
+                            <th style="padding: 12px 8px;">Asset</th>
+                            <th style="padding: 12px 8px;">Current Allocation</th>
+                            <th style="padding: 12px 8px;">Optimized Target</th>
+                            <th style="padding: 12px 8px;">Change</th>
+                            <th style="padding: 12px 8px;">Strategy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.keys(current_weights).map(ticker => {
+                            const curr = current_weights[ticker];
+                            const opt = optimized_weights[ticker] || 0;
+                            const diff = opt - curr;
+                            
+                            let strategyText = 'HOLD';
+                            let strategyBg = 'rgba(144, 144, 144, 0.1)';
+                            let strategyCol = 'var(--text-muted)';
+                            let changeText = `${diff > 0 ? '+' : ''}${diff.toFixed(1)}%`;
+                            let changeCol = 'var(--text-muted)';
+                            
+                            if (diff > 5) {
+                                strategyText = 'BUY';
+                                strategyBg = 'rgba(0, 200, 150, 0.1)';
+                                strategyCol = 'var(--accent)';
+                                changeCol = 'var(--accent)';
+                            } else if (diff < -5) {
+                                strategyText = 'REDUCE';
+                                strategyBg = 'rgba(244, 63, 94, 0.1)';
+                                strategyCol = 'var(--red)';
+                                changeCol = 'var(--red)';
+                            }
+                            
+                            return `
+                            <tr style="border-bottom: 1px solid var(--border-light);">
+                                <td style="padding: 12px 8px; font-family: var(--mono); font-weight: bold; color: var(--text);">${ticker.replace('.NS', '')}</td>
+                                <td style="padding: 12px 8px; color: var(--text);">${curr.toFixed(1)}%</td>
+                                <td style="padding: 12px 8px; font-weight: bold; color: var(--text);">${opt.toFixed(1)}%</td>
+                                <td style="padding: 12px 8px; font-family: var(--mono); font-weight: bold; color: ${changeCol};">${changeText}</td>
+                                <td style="padding: 12px 8px;">
+                                    <span style="background: ${strategyBg}; color: ${strategyCol}; padding: 4px 10px; border-radius: 12px; font-family: var(--mono); font-size: 0.75rem; font-weight: bold; letter-spacing: 0.05em;">${strategyText}</span>
+                                </td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    // Scroll to results
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/** Helper: returns color based on diversity score */
+function getScoreColor(score) {
+    if (score >= 75) return 'var(--accent)';
+    if (score >= 50) return 'var(--accent2)';
+    return 'var(--red)';
+}
+
+/** Helper: returns color mapping for sectors */
+function getSectorColor(sector) {
+    const colors = {
+        'IT': '#00d2ff',
+        'Banking': '#ffcc33',
+        'Energy': '#ff8c00',
+        'FMCG': '#00ff88',
+        'Pharma': '#ff33cc',
+        'Auto': '#99ccff',
+        'Metals': '#c0c0c0',
+        'Banking': '#fedc00',
+        'Other': 'var(--text-muted)'
+    };
+    return colors[sector] || colors['Other'];
+}
+
+// Wait for supabase + confirmed session before initialising
+const checkSupabaseAndInit = setInterval(async () => {
+    if (!window.supabase) return;
+    clearInterval(checkSupabaseAndInit);
+
+    // onAuthStateChange is the reliable signal — fires once session is confirmed
+    window.supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+            document.getElementById('pt-auth-gate')?.classList.add('pt-hidden');
+            document.getElementById('pt-main-content')?.classList.remove('pt-hidden');
+            initPortfolio();
+        } else {
+            document.getElementById('pt-auth-gate')?.classList.remove('pt-hidden');
+            document.getElementById('pt-main-content')?.classList.add('pt-hidden');
+            holdings = [];
+            livePrices = {};
+            renderPortfolioTable();
+            renderSummaryBar();
+        }
+    });
+
+    // Fallback: getSession with retry — wait up to 3s for session to restore
+    let attempts = 0;
+    const sessionPoll = setInterval(async () => {
+        attempts++;
+        const { data: { session } } = await window.supabase.auth.getSession();
+        if (session?.user) {
+            clearInterval(sessionPoll);
+            document.getElementById('pt-auth-gate')?.classList.add('pt-hidden');
+            document.getElementById('pt-main-content')?.classList.remove('pt-hidden');
+            initPortfolio();
+        } else if (attempts >= 6) { // 6 × 500ms = 3s timeout
+            clearInterval(sessionPoll);
+            document.getElementById('pt-auth-gate')?.classList.remove('pt-hidden');
+            document.getElementById('pt-main-content')?.classList.add('pt-hidden');
+        }
+    }, 500);
 }, 50);
+
+// Keyframe for spinner
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pt-spin { to { transform: rotate(360deg); } }
+`;
+document.head.appendChild(style);

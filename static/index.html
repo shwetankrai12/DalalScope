@@ -14,6 +14,51 @@
         rel="stylesheet" />
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Responsive CSS -->
+    <style>
+        .navbar, header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 16px;
+            min-height: 48px;
+        }
+        #auth-btn, .auth-btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: fit-content;
+        }
+        .pt-table-wrap, #pt-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        @media (max-width: 600px) {
+            .top-bar {
+                flex-wrap: wrap;
+                padding: 12px 16px;
+            }
+            .top-bar-right {
+                flex-wrap: wrap;
+            }
+            #user-display, .user-display {
+                display: none !important;
+            }
+            #market-badge, .market-badge, .stat-card {
+                display: none !important;
+            }
+            .col-avg-buy, .col-trend { 
+                display: none !important; 
+            }
+            #auth-btn, .auth-btn {
+                display: flex !important;
+                margin-left: auto;
+            }
+            #pt-refresh-btn { display: none; }
+            #pt-analyze-btn span { display: none; }
+        }
+    </style>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <!-- Styles -->
@@ -144,28 +189,32 @@
             z-index: 1;
         }
 
-        body.theme-light {
-            --bg: #f4f7fb;
-            --surface: #ffffff;
-            --surface2: #eaf0f6;
-            --border: #d1dce5;
-            --border-glow: #b0c4de;
-            --accent: #009c73;
-            --accent2: #0284c7;
-            --accent-dim: rgba(0, 156, 115, 0.15);
-            --text: #1e293b;
-            --text-muted: #64748b;
-            --text-weak: #64748b;
-            --text-faint: #cbd5e1;
-            --red: #e11d48;
-            --yellow: #d97706;
-            --header-bg: #ffffff;
-            --input-bg: #ffffff;
-            --toggle-bg: #e2e8f0;
-            --toggle-act: #ffffff;
-            --table-hover: rgba(0, 0, 0, 0.03);
-            --highlight-bg: rgba(0, 0, 0, 0.02);
+        /* Fixed Button Contracts */
+        #mode-latest, #mode-history, #fetch-btn {
+            background: var(--surface) !important;
+            color: #e2eaf4 !important;
+            border: 1px solid var(--border) !important;
         }
+        #mode-latest.active, #mode-history.active {
+            background: var(--accent) !important;
+            color: #000 !important;
+        }
+        .pt-btn-primary, .pt-analyze-btn, [onclick*="openAddModal"], [onclick*="analyzePortfolio"] {
+            background: var(--accent) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border: none !important;
+            padding: 6px 14px !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+        }
+        footer,
+        .pt-modal-backdrop {
+            position: relative;
+            z-index: 1;
+        }
+
+
 
         /* Typography Helpers */
         .font-mono {
@@ -310,8 +359,9 @@
             font-family: var(--sans);
             font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-weak);
+            letter-spacing: 0.08em;
+            color: #ffffff;
+            opacity: 0.8;
             font-weight: 700;
         }
 
@@ -396,12 +446,13 @@
             display: flex;
             align-items: center;
             align-self: center;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            border-radius: 6px;
+            background: rgba(30, 50, 80, 0.4);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
             overflow: hidden;
-            height: 38px;
+            height: 42px;
             flex-shrink: 0;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
         }
 
         .stitch-toggle-group input[type="radio"] {
@@ -409,25 +460,33 @@
         }
 
         .toggle-btn {
-            padding: 0 18px;
-            height: 38px;
+            padding: 0 22px;
+            height: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: var(--mono);
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.06em;
-            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            color: #ffffff;
+            opacity: 0.6;
+            background: transparent;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
             white-space: nowrap;
+            border-right: 1px solid var(--border);
+        }
+
+        .toggle-btn:last-of-type {
+            border-right: none;
         }
 
         .toggle-btn:hover {
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .stitch-toggle-group input[type="radio"]:checked+.toggle-btn {
@@ -594,6 +653,8 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;
+            margin-top: 48px;
+            margin-bottom: 24px;
         }
 
         .summary-card {
@@ -664,6 +725,7 @@
         /* Data Table Section */
         .table-section {
             padding: 0;
+            margin-top: 48px;
         }
 
         .table-header-context {
@@ -849,16 +911,6 @@
                 padding: 16px;
             }
 
-            .top-bar {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
-
-            .top-bar-right {
-                display: none;
-            }
-
             .summary-cards-row {
                 grid-template-columns: 1fr;
             }
@@ -904,10 +956,10 @@
         #news-section {
             display: none;
             flex-direction: column;
-            gap: 1.25rem;
+            gap: 1.5rem;
             width: 100%;
             max-width: 1400px;
-            margin: 0 auto;
+            margin: 48px auto 0;
             padding-bottom: 4rem;
         }
 
@@ -1137,6 +1189,25 @@
             color: var(--accent);
         }
 
+        /* Portfolio Analysis Custom Styles */
+        .pt-btn-accent {
+            background: rgba(0, 210, 255, 0.1);
+            color: #00d2ff;
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .pt-btn-accent:hover {
+            background: rgba(0, 210, 255, 0.2);
+            border-color: #00d2ff;
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+        }
+
+        .pt-btn-icon {
+            margin-right: 4px;
+            font-size: 0.9em;
+        }
+
         .sentiment-pill.BEARISH {
             background: rgba(244, 63, 94, 0.12);
             color: var(--red);
@@ -1263,10 +1334,11 @@
         }
 
         #search-btn:disabled {
-            background: var(--border);
-            opacity: 0.5;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            opacity: 0.4;
             cursor: not-allowed;
-            color: var(--text-muted);
+            color: var(--text-weak);
         }
 
         #search-btn:disabled svg {
@@ -1372,24 +1444,27 @@
         /* ── Portfolio Tracker ──────────────────────────────────── */
         .nav-tabs {
             display: flex;
-            gap: 4px;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0;
+            padding: 0 16px;
             border-bottom: 1px solid var(--border);
             margin-bottom: 0;
-            padding: 0 4px;
+            background: transparent;
         }
 
         .nav-tab {
+            padding: 8px 20px;
             font-family: var(--mono);
-            font-size: .75rem;
-            font-weight: 700;
-            letter-spacing: .06em;
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
+            font-size: 11px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
             color: var(--text-muted);
-            cursor: pointer;
+            background: none;
+            border: none;
             border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
+            cursor: pointer;
+            white-space: nowrap;
             transition: color .2s, border-color .2s;
         }
 
@@ -1398,8 +1473,8 @@
         }
 
         .nav-tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
+            color: var(--text);
+            border-bottom: 2px solid var(--accent);
         }
 
         /* Tab panels */
@@ -2486,12 +2561,6 @@
             </div>
         </div>
         <div class="top-bar-right">
-            <button id="theme-toggle"
-                style="padding: 4px 8px; font-size: 1.2rem; cursor: pointer; border: none; background: transparent; color: var(--text); margin-right: 12px;"
-                title="Toggle Theme">
-                <span id="theme-icon">🔆</span>
-            </button>
-
             <div id="user-display" class="user-display auth-hidden">
                 <span id="user-email"></span>
             </div>
@@ -2506,11 +2575,9 @@
 
     <main class="dashboard-container">
         <!-- Nav Tabs -->
-        <nav class="stitch-card nav-tabs" style="padding: 0 8px;">
-            <button class="nav-tab active" data-tab="tab-market" onclick="switchTab('tab-market', this)">📈 MARKET
-                DATA</button>
-            <button class="nav-tab" data-tab="tab-portfolio" onclick="switchTab('tab-portfolio', this)">💼
-                PORTFOLIO</button>
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-tab="tab-market" onclick="switchTab('tab-market', this)">📈 MARKET DATA</button>
+            <button class="nav-tab" data-tab="tab-portfolio" onclick="switchTab('tab-portfolio', this)">💼 PORTFOLIO</button>
         </nav>
 
         <!-- Market Data Tab -->
@@ -2555,20 +2622,14 @@
                     </div>
                 </div>
 
-                <div class="quick-access-row">
-                    <span class="quick-access-label">Quick:</span>
-                    <button class="quick-chip" onclick="quickSearch('RELIANCE.NS')">RELIANCE</button>
-                    <button class="quick-chip" onclick="quickSearch('TCS.NS')">TCS</button>
-                    <button class="quick-chip" onclick="quickSearch('HDFCBANK.NS')">HDFCBANK</button>
-                    <button class="quick-chip" onclick="quickSearch('INFY.NS')">INFY</button>
-                    <button class="quick-chip" onclick="quickSearch('WIPRO.NS')">WIPRO</button>
-                    <button class="quick-chip" onclick="quickSearch('BAJFINANCE.NS')">BAJFINANCE</button>
-                    <button class="quick-chip" onclick="quickSearch('ITC.NS')">ITC</button>
-                </div>
+                <div id="stock-trends-root" style="margin-top: 16px;"></div>
             </section>
 
+            <link rel="stylesheet" href="/dist/carousel.css">
+            <script src="/dist/carousel.js" defer></script>
+
             <!-- Search Panel -->
-            <section class="stitch-card search-panel">
+            <section class="stitch-card search-panel" style="margin-top: 48px;">
                 <form id="search-form" class="search-form">
                     <div class="search-input-wrap">
                         <span class="search-icon">🔍</span>
@@ -2608,8 +2669,7 @@
             <div id="dashboard-content" class="dashboard-content">
 
                 <!-- ONE Unified Chart -->
-                <div id="unified-chart-section" class="stitch-card chart-section fade-in-stagger"
-                    style="--stagger-idx: 5;">
+                <div id="unified-chart-section" class="stitch-card chart-section fade-in-stagger" style="margin-top: 32px; --stagger-idx: 5;">
                     <div class="chart-header">
                         <h3 id="chart-title">NIFTY 50 — 30 Day History</h3>
                     </div>
@@ -2759,7 +2819,7 @@
             </div>
 
             <!-- Main content (shown when logged in) -->
-            <div id="pt-main-content">
+            <div id="pt-main-content" class="pt-hidden">
                 <!-- Summary Bar -->
                 <div class="pt-summary-bar">
                     <div class="pt-stat">
@@ -2783,12 +2843,12 @@
 
                 <!-- Holdings Table Card -->
                 <div class="pt-table-card">
-                    <div class="pt-table-header">
-                        <span class="pt-table-title">HOLDINGS</span>
-                        <div class="pt-table-actions">
-                            <button class="pt-btn" id="pt-refresh-btn" onclick="refreshPrices()">↻ Refresh
-                                Prices</button>
-                            <button class="pt-btn pt-btn-primary" onclick="openAddModal()">+ Add Holding</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding: 12px 20px; border-bottom: 1px solid var(--border);">
+                        <span style="font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--text-muted); text-transform:uppercase;">Holdings</span>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button id="pt-refresh-btn" onclick="refreshPrices()" style="font-size:11px; color:var(--text-muted); background:none; border:1px solid var(--border); border-radius:4px; padding:5px 10px; cursor:pointer;">↻ Refresh</button>
+                            <button id="pt-analyze-btn" onclick="analyzePortfolio()" style="font-size:11px; color:var(--accent); background:none; border:1px solid var(--accent); border-radius:4px; padding:5px 10px; cursor:pointer;">⚡ <span>Analyze</span></button>
+                            <button id="pt-add-btn" onclick="openAddModal()" style="font-size:11px; color:#000; background:var(--accent); border:none; border-radius:4px; padding:5px 10px; cursor:pointer; font-weight:500;">+ Add</button>
                         </div>
                     </div>
 
@@ -2807,18 +2867,23 @@
                                 <tr>
                                     <th style="text-align:left">STOCK</th>
                                     <th>QTY</th>
-                                    <th>AVG BUY</th>
+                                    <th class="col-avg-buy">AVG BUY</th>
                                     <th>LTP</th>
                                     <th>INVESTED</th>
                                     <th>CURRENT</th>
                                     <th>P&L</th>
-                                    <th>TREND</th>
+                                    <th class="col-trend">TREND</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody id="pt-tbody"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Analysis Results (Hidden by default) -->
+                <div id="pt-analysis-results" class="pt-hidden" style="margin-bottom: 3rem;">
+                    <!-- Dynamically populated by portfolio.js -->
                 </div>
 
             </div><!-- end pt-main-content -->
@@ -2889,25 +2954,7 @@
         const queryInput = document.getElementById('query');
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Theme Toggle Logic
-            const themeBtn = document.getElementById('theme-toggle');
-            const themeIcon = document.getElementById('theme-icon');
-
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.body.classList.add('theme-light');
-                if (themeIcon) themeIcon.textContent = '🌙';
-            }
-
-            if (themeBtn) {
-                themeBtn.addEventListener('click', () => {
-                    const body = document.body;
-                    body.classList.toggle('theme-light');
-                    const isLight = body.classList.contains('theme-light');
-                    themeIcon.textContent = isLight ? '🌙' : '🔆';
-                    localStorage.setItem('theme', isLight ? 'light' : 'dark');
-                });
-            }
+            // Theme Toggle Logic Removed
 
             // Top Bar Logic
 
@@ -3930,8 +3977,8 @@
 
     </script>
 
-    <script type="module" src="auth.js"></script>
-    <script type="module" src="portfolio.js"></script>
+    <script type="module" src="/auth.js"></script>
+    <script src="/portfolio.js" defer></script>
 
     <!-- Auth Modal (3-panel) -->
     <div class="auth-modal-backdrop" id="auth-modal">
