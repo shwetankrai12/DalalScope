@@ -8,3 +8,4 @@ tabulate
 supabase
 python-dotenv
 PyPortfolioOpt
+python-3.11.9
